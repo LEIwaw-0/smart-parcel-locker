@@ -1,0 +1,10 @@
+{
+  "channel": "log",
+  "serverchan_key": "",
+  "pushplus_token": "",
+  "feishu_webhook": "",
+  "dashscope_api_key": "",
+  "ai_base_url": "",
+  "ai_model": "qwen-turbo",
+  "ai_system_prompt": ""
+}

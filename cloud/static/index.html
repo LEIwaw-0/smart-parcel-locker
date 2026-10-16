@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>智能快递柜云平台 v3</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: "Microsoft YaHei", system-ui, sans-serif; background: #f3f5f7; color: #1f2933; padding-bottom: 20px; }
+  header { background: linear-gradient(135deg, #0e9f8c, #0b7a6c); color: #fff; padding: 16px; }
+  header h1 { font-size: 18px; font-weight: 700; }
+  header .sub { font-size: 12px; opacity: .85; margin-top: 4px; }
+  .status-bar { display: flex; gap: 12px; margin-top: 10px; font-size: 13px; align-items: center; flex-wrap: wrap; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; }
+  .dot.on { background: #7bed9f; box-shadow: 0 0 6px #7bed9f; }
+  .dot.off { background: #ff6b6b; box-shadow: 0 0 6px #ff6b6b; }
+
+  nav { display: flex; background: #fff; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 10; }
+  nav button { flex: 1; border: none; background: none; padding: 14px 0; font-size: 15px; color: #6b7280; cursor: pointer; border-bottom: 3px solid transparent; font-family: inherit; }
+  nav button.active { color: #0e9f8c; font-weight: 700; border-bottom-color: #0e9f8c; }
+
+  main { max-width: 640px; margin: 0 auto; padding: 14px 14px 40px; }
+  .card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .card h2 { font-size: 16px; margin-bottom: 12px; }
+  label { display: block; font-size: 13px; color: #6b7280; margin-bottom: 6px; }
+  input[type=tel], input[type=text], select {
+    width: 100%; padding: 13px 12px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; font-family: inherit;
+  }
+  input:focus, select:focus { border-color: #0e9f8c; }
+  .btn { display: inline-block; width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .btn-primary { background: #0e9f8c; color: #fff; }
+  .btn-primary:disabled { background: #a7d8d2; }
+  .btn-ghost { background: #eef1f4; color: #374151; margin-top: 10px; }
+  .btn-danger { background: #fee2e2; color: #b91c1c; margin-top: 10px; }
+  .btn-row { display: flex; gap: 10px; }
+  .btn-row .btn { flex: 1; }
+
+  .result { margin-top: 14px; border-radius: 10px; padding: 14px; background: #f0faf8; border: 1px solid #0e9f8c; display: none; }
+  .result .big { font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #0b7a6c; text-align: center; margin: 8px 0; }
+  .result .row { font-size: 14px; line-height: 1.9; }
+  .result .warn { color: #d9822b; font-size: 13px; margin-top: 6px; }
+  .err { color: #b91c1c; font-size: 14px; margin-top: 10px; display: none; }
+
+  .search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .search-row input { flex: 1; }
+  .search-row select { width: 100px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 9px 6px; text-align: left; border-bottom: 1px solid #eef1f4; }
+  th { color: #6b7280; font-weight: 600; white-space: nowrap; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; white-space: nowrap; }
+  .tag.deposited { background: #d1f5ef; color: #0b7a6c; }
+  .tag.depositing { background: #fef3c7; color: #b45309; }
+  .tag.picked { background: #e5e7eb; color: #4b5563; }
+  .tag.free { background: #dbeafe; color: #1d4ed8; }
+  .tag.occupied_local { background: #f3e8ff; color: #6d28d9; }
+
+  .boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .box { border-radius: 10px; padding: 14px; text-align: center; border: 1px solid #e5e7eb; position: relative; }
+  .box.free { background: #fff; }
+  .box.depositing { background: #fffbeb; border-color: #f59e0b; }
+  .box.deposited { background: #f0faf8; border-color: #0e9f8c; }
+  .box.occupied_local { background: #faf5ff; border-color: #a855f7; }
+  .box .no { font-size: 13px; color: #6b7280; }
+  .box .st { font-size: 13px; font-weight: 700; margin: 4px 0; }
+  .box .info { font-size: 12px; color: #4b5563; line-height: 1.6; }
+  .box .door { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-top: 6px; font-weight: 600; }
+  .box .door.open { background: #fee2e2; color: #b91c1c; }
+  .box .door.closed { background: #dcfce7; color: #15803d; }
+  .box .door.unknown { background: #f3f4f6; color: #9ca3af; }
+  .box .src { font-size: 10px; color: #9ca3af; margin-top: 4px; }
+
+  .notify-item { padding: 10px 0; border-bottom: 1px solid #eef1f4; font-size: 13px; line-height: 1.7; }
+  .notify-item .meta { color: #6b7280; font-size: 12px; }
+  .ok { color: #0b7a6c; } .fail { color: #b91c1c; }
+  .empty { text-align: center; color: #9ca3af; padding: 30px 0; font-size: 14px; }
+  .mini-btn { border: 1px solid #d1d5db; background: #fff; color: #374151; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .mini-btn:active { background: #f3f4f6; }
+</style>
+</head>
+<body>
+<header>
+  <h1>智能快递柜云平台</h1>
+  <div class="sub">投件 · 取件码 · 查件 · 通知（毕设演示版）</div>
+  <div class="status-bar">
+    <span><span class="dot" id="lockerDot"></span><span id="lockerText">柜机…</span></span>
+    <span id="timeText"></span>
+    <span id="eventText" style="color:#fef3c7;font-size:12px;"></span>
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="deposit">投件</button>
+  <button data-tab="search">查件</button>
+  <button data-tab="boxes">格口</button>
+  <button data-tab="notify">通知</button>
+</nav>
+
+<main>
+  <!-- 投件 -->
+  <section id="tab-deposit">
+    <div class="card" id="depositFormCard">
+      <h2>投件登记</h2>
+      <label>收件人手机号（输入完整手机号，自动取尾号6位）</label>
+      <input type="tel" id="depPhone" placeholder="例如 13800138000" maxlength="11" inputmode="numeric">
+      <div class="err" id="depErr"></div>
+      <button class="btn btn-primary" id="depStart" style="margin-top:12px;">开始投件（开箱）</button>
+    </div>
+    <div class="card" id="depositStepCard" style="display:none;">
+      <h2>投件进行中</h2>
+      <div class="result" id="depResult" style="display:block;">
+        <div class="row" id="depInfo"></div>
+        <div class="warn" id="depWarn"></div>
+        <div class="btn-row" style="margin-top:14px;">
+          <button class="btn btn-primary" id="depConfirm">完成投件</button>
+          <button class="btn btn-danger" id="depCancel">取消</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="depositDoneCard" style="display:none;">
+      <h2>投件完成</h2>
+      <div class="result" style="display:block;">
+        <div class="row" id="doneInfo"></div>
+        <div class="big" id="doneCode"></div>
+        <div class="row" id="doneNotify"></div>
+        <button class="btn btn-ghost" id="depAgain">继续投下一件</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 查件 -->
+  <section id="tab-search" style="display:none;">
+    <div class="card">
+      <h2>查件</h2>
+      <div class="search-row">
+        <input type="text" id="searchQ" placeholder="手机号 / 尾号 / 取件码 / 格口号">
+        <select id="searchStatus">
+          <option value="">全部状态</option>
+          <option value="depositing">投件中</option>
+          <option value="deposited">待取件</option>
+          <option value="picked">已取件</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="searchBtn">查询</button>
+      <div style="overflow-x:auto; margin-top:12px;">
+        <table>
+          <thead><tr><th>格口</th><th>手机尾号</th><th>取件码</th><th>状态</th><th>投件时间</th><th></th></tr></thead>
+          <tbody id="searchBody"></tbody>
+        </table>
+        <div class="empty" id="searchEmpty" style="display:none;">未查询到记录</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 格口 -->
+  <section id="tab-boxes" style="display:none;">
+    <div class="card">
+      <h2>格口实时状态 <span style="font-size:12px;color:#6b7280;font-weight:400;">（每 3 秒自动刷新）</span></h2>
+      <div class="boxes" id="boxesGrid"></div>
+    </div>
+  </section>
+
+  <!-- 通知 -->
+  <section id="tab-notify" style="display:none;">
+    <div class="card">
+      <h2>通知记录</h2>
+      <div id="notifyList"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var cur = null; // 当前投件 {box_id, code}
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function api(path, opts) {
+    /* 给所有 fetch 加版本号 query，防止浏览器缓存旧版 JSON */
+    var sep = path.indexOf("?") === -1 ? "?" : "&";
+    return fetch(path + sep + "_=" + Date.now(), opts).then(function (r) { return r.json(); });
+  }
+  function showErr(el, msg) { el.textContent = msg; el.style.display = "block"; }
+  function hideErr(el) { el.style.display = "none"; }
+
+  /* ---------- 顶部状态 ---------- */
+  function refreshStatus() {
+    api("/api/status").then(function (d) {
+      var dot = document.getElementById("lockerDot");
+      var txt = document.getElementById("lockerText");
+      if (d.locker_online) { dot.className = "dot on"; txt.textContent = "柜机在线"; }
+      else { dot.className = "dot off"; txt.textContent = "柜机离线（演示模式可用）"; }
+      document.getElementById("timeText").textContent = d.time;
+      /* 直接按每个格口的最终状态计数：柜机上报的占用与 DB 记录都算，
+         避免柜机在线但未上报占用掩码时统计成 0 */
+      var used = 0;
+      d.boxes.forEach(function (b) {
+        if (b.status !== "free") used++;
+      });
+      txt.textContent += " · " + used + "/" + d.boxes.length + " 格口占用";
+      var evEl = document.getElementById("eventText");
+      if (evEl) {
+        if (d.locker_events && d.locker_events.length) {
+          var ev = d.locker_events[0];
+          evEl.textContent = "事件：" + ev.type + (ev.text && ev.text !== ev.type ? " " + ev.text : "") + " · " + ev.time.slice(11, 19);
+        } else {
+          evEl.textContent = "";
+        }
+      }
+      renderBoxes(d.boxes, d.locker_door_mask || 0, !!d.locker_online);
+      renderNotify(d.locker_events || []);
+    }).catch(function () {
+      document.getElementById("lockerDot").className = "dot off";
+      document.getElementById("lockerText").textContent = "无法连接服务器";
+    });
+  }
+  function renderBoxes(boxes, doorMask, online) {
+    var grid = document.getElementById("boxesGrid");
+    if (!grid) return;
+    var stMap = { free: "空闲", depositing: "投件中", deposited: "待取件", occupied_local: "柜机占用" };
+    var srcMap = { cloud: "云端", locker: "柜机本地", db: "DB" };
+    grid.innerHTML = boxes.map(function (b) {
+      var info;
+      if (b.status === "free") {
+        info = "可投件";
+      } else {
+        info = "码 " + esc(b.code || "------");
+        if (b.phone_tail) info += " · 尾号 " + esc(b.phone_tail);
+        if (b.code_live && b.code_live !== b.code) info += "<br>实时码 " + esc(b.code_live);
+      }
+      /* 柜门物理状态：doorMask bit i = box i+1, 1=open。
+         柜机离线时门状态无从得知；在线时柜机每 2s 上报一次 STATUS，掩码为 0
+         就是“全部关着”，不该再显示“门未知”。 */
+      var bit = (doorMask >> (b.box_id - 1)) & 1;
+      var doorCls, doorTxt;
+      if (!online) { doorCls = "unknown"; doorTxt = "门未知"; }
+      else if (bit) { doorCls = "open"; doorTxt = "门开"; }
+      else { doorCls = "closed"; doorTxt = "门关"; }
+      var src = b.source ? '<div class="src">来源：' + (srcMap[b.source] || b.source) + '</div>' : '';
+      return '<div class="box ' + b.status + '"><div class="no">格口 ' + b.box_id + '</div>' +
+        '<div class="st">' + (stMap[b.status] || b.status) + '</div>' +
+        '<div class="info">' + info + '</div>' +
+        '<div class="door ' + doorCls + '">' + doorTxt + '</div>' + src +
+        '<button class="mini-btn" data-open="' + b.box_id + '" style="margin-top:8px;">远程开锁</button></div>';
+    }).join("");
+  }
+  function renderNotify(events) {
+    var el = document.getElementById("notifyList");
+    if (!el) return;
+    if (!events.length) {
+      el.innerHTML = '<div class="empty">暂无事件</div>';
+      return;
+    }
+    el.innerHTML = events.map(function (ev) {
+      var body = ev.text ? ('[' + esc(ev.type) + '] ' + esc(ev.text)) : ('[' + esc(ev.type) + ']');
+      return '<div class="notify-item">' +
+        '<div>' + body + '</div>' +
+        '<div class="meta">' + esc(ev.time) + '</div></div>';
+    }).join("");
+  }
+
+  /* ---------- 投件 ---------- */
+  var depStart = document.getElementById("depStart");
+  depStart.addEventListener("click", function () {
+    var phone = document.getElementById("depPhone").value.trim();
+    hideErr(document.getElementById("depErr"));
+    if (!/^\d{6,11}$/.test(phone)) { showErr(document.getElementById("depErr"), "请输入 6~11 位手机号"); return; }
+    depStart.disabled = true; depStart.textContent = "开箱中…";
+    api("/api/deposit/start", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: phone })
+    }).then(function (d) {
+      depStart.disabled = false; depStart.textContent = "开始投件（开箱）";
+      if (!d.ok) { showErr(document.getElementById("depErr"), d.error || "失败"); return; }
+      cur = d;
+      cur.phone = phone;
+      document.getElementById("depositFormCard").style.display = "none";
+      document.getElementById("depositStepCard").style.display = "block";
+      document.getElementById("depInfo").innerHTML =
+        "格口 <b>" + d.box_id + "</b> 已开锁，请放入包裹并关门。<br>取件码：<b>" + d.code + "</b>（放好包裹后再点完成）";
+      document.getElementById("depWarn").textContent =
+        d.locker_ok ? "" : "提示：柜机离线，已按演示模式继续（未真实开锁）";
+    }).catch(function () { depStart.disabled = false; depStart.textContent = "开始投件（开箱）"; showErr(document.getElementById("depErr"), "网络错误"); });
+  });
+
+  document.getElementById("depConfirm").addEventListener("click", function () {
+    if (!cur) return;
+    api("/api/deposit/confirm", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ box_id: cur.box_id })
+    }).then(function (d) {
+      if (!d.ok) { alert(d.error || "确认失败"); return; }
+      document.getElementById("depositStepCard").style.display = "none";
+      document.getElementById("depositDoneCard").style.display = "block";
+      document.getElementById("doneInfo").innerHTML = "包裹已存入 <b>格口 " + d.box_id + "</b>（手机尾号 " + esc(cur.phone.slice(-6)) + "）";
+      document.getElementById("doneCode").textContent = d.code;
+      var nb = d.notify_ok ? '<span class="ok">✓ ' + esc(d.notify_detail.channel) + " 通知已发送</span>"
+                           : '<span class="fail">✗ 通知发送失败：' + esc(JSON.stringify(d.notify_detail)) + "</span>";
+      document.getElementById("doneNotify").innerHTML = nb;
+      cur = null;
+      refreshStatus();
+    });
+  });
+
+  document.getElementById("depCancel").addEventListener("click", function () {
+    if (!cur) return;
+    api("/api/deposit/cancel", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ box_id: cur.box_id })
+    }).then(function () {
+      cur = null;
+      resetDeposit();
+      refreshStatus();
+    });
+  });
+
+  document.getElementById("depAgain").addEventListener("click", resetDeposit);
+  function resetDeposit() {
+    document.getElementById("depositStepCard").style.display = "none";
+    document.getElementById("depositDoneCard").style.display = "none";
+    document.getElementById("depositFormCard").style.display = "block";
+    document.getElementById("depPhone").value = "";
+  }
+
+  /* ---------- 查件 ---------- */
+  function doSearch() {
+    var q = encodeURIComponent(document.getElementById("searchQ").value.trim());
+    var st = encodeURIComponent(document.getElementById("searchStatus").value);
+    api("/api/packages?q=" + q + "&status=" + st).then(function (d) {
+      var body = document.getElementById("searchBody");
+      var empty = document.getElementById("searchEmpty");
+      if (!d.rows.length) { body.innerHTML = ""; empty.style.display = "block"; return; }
+      empty.style.display = "none";
+      var stMap = { depositing: "投件中", deposited: "待取件", picked: "已取件" };
+      var tagCls = { depositing: "depositing", deposited: "deposited", picked: "picked" };
+      body.innerHTML = d.rows.map(function (r) {
+        return "<tr><td>" + r.box_id + "</td><td>" + esc(r.phone_tail) + "</td><td>" + esc(r.code) +
+          '</td><td><span class="tag ' + tagCls[r.status] + '">' + stMap[r.status] + "</span></td><td>" +
+          esc(r.created_at) + "</td><td>" + (r.status === "deposited"
+            ? '<button class="mini-btn" data-sim="' + r.box_id + '">模拟取件</button>' : "") + "</td></tr>";
+      }).join("");
+    });
+  }
+  document.getElementById("searchBtn").addEventListener("click", doSearch);
+  document.getElementById("searchQ").addEventListener("keydown", function (e) { if (e.key === "Enter") doSearch(); });
+  document.addEventListener("click", function (e) {
+    var btn = e.target;
+    if (btn && btn.dataset && btn.dataset.sim) {
+      api("/api/sim/pickup", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ box_id: parseInt(btn.dataset.sim, 10) }) }).then(function () {
+          doSearch(); refreshStatus();
+        });
+    }
+    if (btn && btn.dataset && btn.dataset.open) {
+      var bid = parseInt(btn.dataset.open, 10);
+      btn.disabled = true; btn.textContent = "开锁中…";
+      api("/api/admin/open", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ box_id: bid }) }).then(function (d) {
+          btn.disabled = false; btn.textContent = "远程开锁";
+          if (!d.ok) { alert(d.error || "开锁失败"); return; }
+          alert("格口 " + bid + " 远程开锁指令已" + (d.locker_online ? "下发" : "排队（柜机离线）"));
+          refreshStatus();
+        }).catch(function () { btn.disabled = false; btn.textContent = "远程开锁"; alert("网络错误"); });
+    }
+  });
+
+  /* ---------- 通知 ---------- */
+  function loadNotify() {
+    api("/api/notifications").then(function (d) {
+      var list = document.getElementById("notifyList");
+      if (!d.rows.length) { list.innerHTML = '<div class="empty">暂无通知记录</div>'; return; }
+      list.innerHTML = d.rows.map(function (r) {
+        return '<div class="notify-item"><div>' + esc(r.content) + '</div>' +
+          '<div class="meta">' + esc(r.sent_at) + " · 通道 " + esc(r.channel) +
+          (r.ok ? ' · <span class="ok">发送成功</span>' : ' · <span class="fail">发送失败</span>') + "</div></div>";
+      }).join("");
+    });
+  }
+
+  /* ---------- Tab 切换 ---------- */
+  var tabs = { deposit: 1, search: 2, boxes: 3, notify: 4 };
+  document.querySelectorAll("nav button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("nav button").forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      Object.keys(tabs).forEach(function (k) {
+        document.getElementById("tab-" + k).style.display = (k === btn.dataset.tab) ? "block" : "none";
+      });
+      if (btn.dataset.tab === "search") doSearch();
+      if (btn.dataset.tab === "notify") loadNotify();
+      if (btn.dataset.tab === "boxes") refreshStatus();
+    });
+  });
+
+  refreshStatus();
+  setInterval(refreshStatus, 3000);
+})();
+</script>
+</body>
+</html>

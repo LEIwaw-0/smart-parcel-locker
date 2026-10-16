@@ -1,0 +1,9 @@
+# 固件源码为 GBK 编码，且字符串字面量的字节需与 GBK 字库（bsp/tft_lcd/hzfont.c）
+# 匹配。因此这里禁止 git 做任何编码或行尾转换，保证任何机器克隆/下载后
+# 拿到的字节与本地一致，Keil 直接编译即可，不会出现中文显示乱码。
+* -text
+
+# 语言标注
+*.c    linguist-language=C
+*.h    linguist-language=C
+*.py   linguist-language=Python
