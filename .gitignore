@@ -20,6 +20,8 @@ __pycache__/
 
 # ---- 运行时数据 / 本地配置（含密钥，勿入库）----
 cloud/config.json
+# 柜机本机部署参数：WiFi 名称/密码、云端服务器 IP（模板见 wifi_config.example.h）
+firmware/driver/wifi_config.h
 *.db
 *.sqlite3
 

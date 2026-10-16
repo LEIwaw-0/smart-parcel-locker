@@ -1,4 +1,4 @@
-﻿
+
 #ifndef __ESP8266_H
 #define __ESP8266_H
 
@@ -27,9 +27,9 @@ uint8_t ESP8266_FetchBusy(void);
 
 uint8_t ESP8266_SendIsPending(void);  /* 1 = 发送缓冲区忙, 0 = 空闲 */
 
-#define ESP_SSID   "ALLLFLYYDS"
-#define ESP_PASS   "}64U4s77"
-#define ESP_TCP_IP "192.168.137.1"
-#define ESP_TCP_PORT 8090
+/* WiFi 凭证与云端地址来自本机私有配置 driver/wifi_config.h，
+   该文件已被 .gitignore 忽略，不随仓库发布。
+   首次构建前请把同目录的 wifi_config.example.h 复制为 wifi_config.h 并填入实际值。 */
+#include "wifi_config.h"
 
 #endif

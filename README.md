@@ -45,7 +45,7 @@ STM32F407VE 主控的 4 格口智能快递柜。支持 **触摸屏 / 语音** �
 ```
 smart-parcel-locker/
 ├── README.md                  ← 本文件
-├── firmware/                  ← STM32 固件（Keil MDK 工程，自包含可独立编译）
+├── firmware/                  ← STM32 固件（Keil MDK 工程，可独立编译）
 │   ├── locker.uvprojx         Keil MDK 工程文件
 │   ├── app/                   ← 应用层（本次拆分出来的部分）
 │   │   ├── app_config.h          全局常量、状态机枚举、UI 布局宏
@@ -62,7 +62,8 @@ smart-parcel-locker/
 │   │   ├── lock.c/.h             电磁锁驱动（含过热保护）
 │   │   ├── codebox.c/.h          取件码表 Flash 持久化
 │   │   ├── keypad.c/.h           6 位数字键盘控件
-│   │   └── esp8266.c/.h          非阻塞 AT 状态机 + 借链路 HTTP GET
+│   │   ├── esp8266.c/.h          非阻塞 AT 状态机 + 借链路 HTTP GET
+│   │   └── wifi_config.example.h  本机部署参数模板（复制为 wifi_config.h，已被 .gitignore 忽略）
 │   ├── bsp/                   ← 复用/移植的底层代码
 │   │   ├── tft_lcd/              lcd / touch / font / button / hzfont
 │   │   ├── ld3320/               语音识别
@@ -133,6 +134,15 @@ app_ctx.h    ──> 被所有模块包含（只放共享变量 extern）
 
 **环境**：Keil MDK-ARM v5.14 + `Keil.STM32F4xx_DFP 1.0.8`（C99，`USE_STDPERIPH_DRIVER`）
 
+**首次构建前**：仓库不含 WiFi 凭证，先复制模板生成本机配置文件（该文件已被 `.gitignore` 忽略，不会提交）：
+
+```powershell
+copy firmware\driver\wifi_config.example.h firmware\driver\wifi_config.h
+```
+
+再编辑 `firmware\driver\wifi_config.h`，填入 WiFi 名称、密码，以及运行 `cloud/server.py`
+那台电脑的 IP（Windows 移动热点通常为 `192.168.137.1`）。
+
 ```powershell
 # 命令行编译
 D:\keil\UV4\UV4.exe -b firmware\locker.uvprojx -j0 -o build.log
@@ -155,7 +165,7 @@ pip install -r requirements.txt
 python server.py            # 或直接双击 start.bat
 ```
 
-柜机与服务器需在同一网段，`esp8266.c` 中配置 WiFi SSID/密码与服务器 IP，端口 **8090**。
+柜机与服务器需在同一网段，WiFi 名称/密码与服务器 IP 在 `firmware\driver\wifi_config.h` 中配置，端口 **8090**。
 浏览器打开 `http://<服务器IP>:8000` 进入 Web 后台。
 
 ---
@@ -354,7 +364,7 @@ extern uint32_t s_door_open_tick[BOX_COUNT]; /* 开门时刻，用于超时兜�
 |---|---|---|
 | `main.c` | 2265 行单文件 | 477 行 + 7 个应用模块 |
 | 函数体 | — | 逐字节取自原 `main.c`，未做任何逻辑改动 |
-| 编译 | — | 自包含，可独立编译（已实测 0 error / 0 warning） |
+| 编译 | — | 可独立编译（已实测 0 error / 0 warning）；WiFi 凭证先按「编译与烧录」步骤复制模板 |
 
 拆分只做两件事：把跨模块调用的函数去掉 `static` 并在头文件声明；
 把原本 file-scope 的共享状态集中到 `app_ctx.c`。除此之外，两份源码逻辑等价。
