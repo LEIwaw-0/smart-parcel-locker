@@ -3,11 +3,9 @@
 
 #include "stm32f4xx.h"
 
-/* ST7796S 4.0��SPIҺ����, ����480x320(����direction=1), RGB565 */
 #define LCD_W   480
 #define LCD_H   320
 
-/* ������ɫ (RGB565) */
 #define COLOR_WHITE    0xFFFF
 #define COLOR_BLACK    0x0000
 #define COLOR_RED      0xF800
@@ -19,12 +17,6 @@
 #define COLOR_GRAY     0x8430
 #define COLOR_ORANGE   0xFD20
 
-/*
- * ����ӳ�� (����SPI):
- *   CS  = PA4 (����)     DC/RS = PB0 (����)
- *   RST = PB1 (����)     BLK   = PB2 (����, ��=��)
- *   SCK = PA5 (����)     MOSI  = PA7 (����)   MISO = PA6 (����)
- */
 
 void     LCD_WriteCmd(uint8_t cmd);
 void     LCD_WriteData(uint8_t d);
@@ -38,7 +30,6 @@ void     LCD_Fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c
 void     LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
 void     LCD_DrawRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
 void     LCD_DrawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color);
-/* size: 1=6x8С��, 2=12x16���� (5x7�ֿ�Ŵ�2��) */
 void     LCD_ShowChar(uint16_t x, uint16_t y, char ch, uint16_t fc, uint16_t bc, uint8_t size);
 void     LCD_ShowString(uint16_t x, uint16_t y, const char *s, uint16_t fc, uint16_t bc, uint8_t size);
 /* Show a 16x16 Chinese char (GBK 2-byte code). size: 1=16x16, 2=32x32. */

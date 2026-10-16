@@ -1,28 +1,17 @@
-/******************************************************
-**  ST7796S 4.0��SPIҺ�������� (����SPI)
-**  ������: ST7796S, 480x320����, RGB565
-**  ����: CS=PA4 DC=PB0 RST=PB1 BLK=PB2
-**        SCK=PA5 MISO=PA6 MOSI=PA7
-**  �ϸ�ο�����Demo_STM32F407ZGT6_Software_SPI/LCD/lcd.c
-******************************************************/
 #include "lcd.h"
 #include "delay.h"
 #include "font.h"
 
-/* ---------------- �������Ŷ��� ---------------- */
 #define LCD_CS(x)    GPIO_WriteBit(GPIOA, GPIO_Pin_4, (BitAction)(x))
 #define LCD_DC(x)    GPIO_WriteBit(GPIOB, GPIO_Pin_0, (BitAction)(x))
 #define LCD_RST(x)   GPIO_WriteBit(GPIOB, GPIO_Pin_1, (BitAction)(x))
 #define LCD_BLK(x)   GPIO_WriteBit(GPIOB, GPIO_Pin_2, (BitAction)(x))
 
-/* ����SPI���� */
 #define LCD_SCK(x)   GPIO_WriteBit(GPIOA, GPIO_Pin_5, (BitAction)(x))
 #define LCD_MOSI(x)  GPIO_WriteBit(GPIOA, GPIO_Pin_7, (BitAction)(x))
 #define LCD_MISO()   GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_6)
 
-/* ����Ĭ������: MADCTL=0x68, ���ķ��� */
 
-/* ---------------- ����SPI (�볧��SPIv_WriteDataһ��) ---------------- */
 static void LCD_SPI_Wr(uint8_t d)
 {
     uint8_t i;
@@ -31,7 +20,7 @@ static void LCD_SPI_Wr(uint8_t d)
         LCD_MOSI((d & 0x80) ? 1 : 0);
         d <<= 1;
         LCD_SCK(0);
-        LCD_SCK(1);   /* �����ز��� */
+        LCD_SCK(1);   
     }
 }
 
@@ -48,11 +37,10 @@ static uint8_t LCD_SPI_Rd(void)
     return d;
 }
 
-/* ---------------- ����/����д (�볧��LCD_WR_REG/LCD_WR_DATAһ��) ---------------- */
 void LCD_WriteCmd(uint8_t cmd)
 {
     LCD_CS(0);
-    LCD_DC(0);      /* DC=0 ��ʾ���� */
+    LCD_DC(0);      
     LCD_SPI_Wr(cmd);
     LCD_CS(1);
 }
@@ -60,19 +48,17 @@ void LCD_WriteCmd(uint8_t cmd)
 void LCD_WriteData(uint8_t d)
 {
     LCD_CS(0);
-    LCD_DC(1);      /* DC=1 ��ʾ���� */
+    LCD_DC(1);      
     LCD_SPI_Wr(d);
     LCD_CS(1);
 }
 
-/* ---------------- GPIO��ʼ�� ---------------- */
 static void LCD_GPIO_Init(void)
 {
     GPIO_InitTypeDef g;
 
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB, ENABLE);
 
-    /* PB0=DC PB1=RST PB2=BLK ������� */
     g.GPIO_Pin   = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2;
     g.GPIO_Mode  = GPIO_Mode_OUT;
     g.GPIO_OType = GPIO_OType_PP;
@@ -80,24 +66,20 @@ static void LCD_GPIO_Init(void)
     g.GPIO_PuPd  = GPIO_PuPd_UP;
     GPIO_Init(GPIOB, &g);
 
-    /* PA4=CS PA5=SCK PA7=MOSI ������� */
     g.GPIO_Pin   = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_7;
     GPIO_Init(GPIOA, &g);
 
-    /* PA6=MISO �������� */
     g.GPIO_Pin  = GPIO_Pin_6;
     g.GPIO_Mode = GPIO_Mode_IN;
     g.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_Init(GPIOA, &g);
 
-    /* ����״̬ */
     LCD_CS(1);
     LCD_DC(1);
     LCD_SCK(0);
     LCD_MOSI(0);
 }
 
-/* ---------------- Ӳ����λ (�볧��LCD_RESETһ��) ---------------- */
 static void LCD_Reset(void)
 {
     LCD_RST(0);
@@ -106,18 +88,16 @@ static void LCD_Reset(void)
     delay_ms(50);
 }
 
-/* ---------------- ST7796S��ʼ�� (�ϸ��հ᳧������) ---------------- */
 void LCD_Init(void)
 {
     LCD_GPIO_Init();
     LCD_Reset();
 
-    /* ===== ST7796S��ʼ������ (����ԭ��,һ�ֲ���) ===== */
-    LCD_WriteCmd(0xF0); LCD_WriteData(0xC3);   /* ����չ����2 partI */
-    LCD_WriteCmd(0xF0); LCD_WriteData(0x96);   /* ����չ����2 partII */
+    LCD_WriteCmd(0xF0); LCD_WriteData(0xC3);   
+    LCD_WriteCmd(0xF0); LCD_WriteData(0x96);   
 
-    LCD_WriteCmd(0x36); LCD_WriteData(0x68);   /* MADCTL��ʼֵ */
-    LCD_WriteCmd(0x3A); LCD_WriteData(0x05);   /* ���ظ�ʽ: 16λRGB565 */
+    LCD_WriteCmd(0x36); LCD_WriteData(0x68);   
+    LCD_WriteCmd(0x3A); LCD_WriteData(0x05);   
 
     LCD_WriteCmd(0xB0); LCD_WriteData(0x80);
     LCD_WriteCmd(0xB6); LCD_WriteData(0x00); LCD_WriteData(0x02);
@@ -131,40 +111,37 @@ void LCD_Init(void)
     LCD_WriteData(0x40); LCD_WriteData(0x8A); LCD_WriteData(0x00); LCD_WriteData(0x00);
     LCD_WriteData(0x29); LCD_WriteData(0x19); LCD_WriteData(0xA5); LCD_WriteData(0x33);
 
-    LCD_WriteCmd(0xC2);   /* �޲������� */
-    LCD_WriteCmd(0xA7);   /* �޲������� */
+    LCD_WriteCmd(0xC2);   
+    LCD_WriteCmd(0xA7);   
 
-    /* ��gammaУ�� */
     LCD_WriteCmd(0xE0);
     LCD_WriteData(0xF0); LCD_WriteData(0x09); LCD_WriteData(0x13); LCD_WriteData(0x12);
     LCD_WriteData(0x12); LCD_WriteData(0x2B); LCD_WriteData(0x3C); LCD_WriteData(0x44);
     LCD_WriteData(0x4B); LCD_WriteData(0x1B); LCD_WriteData(0x18); LCD_WriteData(0x17);
     LCD_WriteData(0x1D); LCD_WriteData(0x21);
 
-    /* ��gammaУ�� */
     LCD_WriteCmd(0xE1);
     LCD_WriteData(0xF0); LCD_WriteData(0x09); LCD_WriteData(0x13); LCD_WriteData(0x0C);
     LCD_WriteData(0x0D); LCD_WriteData(0x27); LCD_WriteData(0x3B); LCD_WriteData(0x44);
     LCD_WriteData(0x4D); LCD_WriteData(0x0B); LCD_WriteData(0x17); LCD_WriteData(0x17);
     LCD_WriteData(0x1D); LCD_WriteData(0x21);
 
-    LCD_WriteCmd(0x36); LCD_WriteData(0xEC);   /* MADCTL�ڶ���д */
-    LCD_WriteCmd(0xF0); LCD_WriteData(0xC3);   /* ����չpartI ����ԭֵ(������֤work) */
-    LCD_WriteCmd(0xF0); LCD_WriteData(0x69);   /* ����չ����2 partII */
+    LCD_WriteCmd(0x36); LCD_WriteData(0xEC);   
+    LCD_WriteCmd(0xF0); LCD_WriteData(0xC3);   
+    LCD_WriteCmd(0xF0); LCD_WriteData(0x69);   
 
-    LCD_WriteCmd(0x13);   /* ������ʾģʽ */
-    LCD_WriteCmd(0x11);   /* �˳�˯�� */
+    LCD_WriteCmd(0x13);   
+    LCD_WriteCmd(0x11);   
     delay_ms(120);
-    LCD_WriteCmd(0x29);   /* ����ʾ */
+    LCD_WriteCmd(0x29);   
     delay_ms(20);
 
-    LCD_BLK(1);                        /* ������ */
-    LCD_Clear(COLOR_WHITE);           /* ���ó�������0xEC����(��display on�ȶ�) */
+    LCD_BLK(1);                        
+    LCD_Clear(COLOR_WHITE);           
 
-    /* �к���480x320: ������0x29�ȶ���д0x36, ����MVλ�쳣���µ�ַ�ؾ� */
     LCD_WriteCmd(0x36); LCD_WriteData(0x28);
     delay_ms(20);
-    LCD_Clear(COLOR_WHITE);           /* ���������� */
+    LCD_Clear(COLOR_WHITE);           
 }
 
 uint16_t LCD_ReadID(void)
@@ -182,21 +159,19 @@ uint16_t LCD_ReadID(void)
     return id;
 }
 
-/* ---------------- ������� ---------------- */
 void LCD_Backlight(uint8_t on)
 {
     LCD_BLK(on ? 1 : 0);
 }
 
-/* ---------------- ������ʾ���� (�볧��LCD_SetWindowsһ��) ---------------- */
 void LCD_SetWindow(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 {
-    LCD_WriteCmd(0x2A);   /* �е�ַ���� */
+    LCD_WriteCmd(0x2A);   
     LCD_WriteData((uint8_t)(x1 >> 8));
     LCD_WriteData((uint8_t)(x1 & 0xFF));
     LCD_WriteData((uint8_t)(x2 >> 8));
     LCD_WriteData((uint8_t)(x2 & 0xFF));
-    LCD_WriteCmd(0x2B);   /* �е�ַ���� */
+    LCD_WriteCmd(0x2B);   
     LCD_WriteData((uint8_t)(y1 >> 8));
     LCD_WriteData((uint8_t)(y1 & 0xFF));
     LCD_WriteData((uint8_t)(y2 >> 8));
@@ -204,7 +179,6 @@ void LCD_SetWindow(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
     LCD_WriteCmd(0x2C);   /* дGRAM */
 }
 
-/* ---------------- ���� ---------------- */
 void LCD_DrawPoint(uint16_t x, uint16_t y, uint16_t color)
 {
     if (x >= LCD_W || y >= LCD_H) return;
@@ -215,13 +189,11 @@ void LCD_DrawPoint(uint16_t x, uint16_t y, uint16_t color)
     LCD_CS(1);
 }
 
-/* ---------------- ���� ---------------- */
 void LCD_Clear(uint16_t color)
 {
     LCD_Fill(0, 0, LCD_W - 1, LCD_H - 1, color);
 }
 
-/* ---------------- ������� (����д, ��ÿ���ط�תCS) ---------------- */
 void LCD_Fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color)
 {
     uint32_t n;
@@ -239,7 +211,6 @@ void LCD_Fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color
     LCD_CS(1);
 }
 
-/* ---------------- ���� (Bresenham�㷨) ---------------- */
 void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color)
 {
     int16_t dx = (x2 > x1) ? (int16_t)(x2 - x1) : (int16_t)(x1 - x2);
@@ -258,7 +229,6 @@ void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c
     }
 }
 
-/* ---------------- �����ο� ---------------- */
 void LCD_DrawRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color)
 {
     LCD_DrawLine(x1, y1, x2, y1, color);
@@ -267,7 +237,6 @@ void LCD_DrawRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c
     LCD_DrawLine(x1, y2, x1, y1, color);
 }
 
-/* ---------------- ��Բ (�е㻭Բ��) ---------------- */
 void LCD_DrawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color)
 {
     int32_t f = 1 - r;
@@ -289,8 +258,6 @@ void LCD_DrawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color)
     }
 }
 
-/* ---------------- ��ʾ�����ַ� (5x7�ֿ�, ������, bit0����) ---------------- */
-/* size: 1=6x8ԭʼ, 2=12x16�Ŵ�2�� */
 void LCD_ShowChar(uint16_t x, uint16_t y, char ch, uint16_t fc, uint16_t bc, uint8_t size)
 {
     uint8_t  s = (size >= 2) ? 2 : 1;
@@ -303,18 +270,16 @@ void LCD_ShowChar(uint16_t x, uint16_t y, char ch, uint16_t fc, uint16_t bc, uin
     if (ch < ' ' || ch > '~') ch = '?';
     f = &ASCII5x7[(ch - ' ') * 5];
 
-    /* �ȹ������ػ����� (����ɨ��) */
     for (row = 0; row < 8; row++) {
         for (k = 0; k < s; k++) {
             for (col = 0; col < 5; col++) {
                 uint16_t c = ((f[col] >> row) & 0x01) ? fc : bc;
                 for (t = 0; t < s; t++) buf[i++] = c;
             }
-            for (t = 0; t < s; t++) buf[i++] = bc;  /* �ַ����1�� */
+            for (t = 0; t < s; t++) buf[i++] = bc;  
         }
     }
 
-    /* ����д������ (CS����һ��д�����ַ�) */
     LCD_SetWindow(x, y, (uint16_t)(x + 6 * s - 1), (uint16_t)(y + 8 * s - 1));
     LCD_CS(0); LCD_DC(1);
     for (i = 0; i < len; i++) {
@@ -324,7 +289,6 @@ void LCD_ShowChar(uint16_t x, uint16_t y, char ch, uint16_t fc, uint16_t bc, uin
     LCD_CS(1);
 }
 
-/* ---------------- ��ʾ�ַ��� ---------------- */
 void LCD_ShowString(uint16_t x, uint16_t y, const char *s, uint16_t fc, uint16_t bc, uint8_t size)
 {
     uint8_t w = (size >= 2) ? 12 : 6;
