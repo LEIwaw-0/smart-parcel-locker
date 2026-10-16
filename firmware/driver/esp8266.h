@@ -34,7 +34,7 @@ uint8_t ESP8266_GetResponse(char *out, uint8_t maxlen);
 /* 获取当前状态码(0..11，供UI显示) */
 uint8_t ESP8266_GetStatus(void);
 
-/* ======================== ���ʽ HTTP GET ========================
+/* ======================== ���ʽ HTTP GET ========================
  * Temporarily closes the relay TCP link, opens a short-lived TCP connection
  * to <host>:80, issues one GET <path> HTTP/1.0, then hands the link back so
  * the main state machine rebuilds the relay connection.

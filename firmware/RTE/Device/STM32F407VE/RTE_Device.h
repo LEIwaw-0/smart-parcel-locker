@@ -2487,14 +2487,14 @@
 //         <i> 1111: Data latency of 17 CLK clock cycles for first burst access (default value after reset)
 //         <i> Note: This timing parameter is not expressed in HCLK periods, but in Flash clock (CLK)
 //         <i> periods. In asynchronous NOR Flash, SRAM or ROM accesses, this value is don't care.
-//         <i> In the case of CRAM, this field must be set to ‘0’.
+//         <i> In the case of CRAM, this field must be set to ï¿½0ï¿½.
 //         <o2> CLKDIV: Clock divide ratio (for CLK signal) <1-15>
 //         <i> Defines the period of CLK clock output signal, expressed in number of HCLK cycles:
 //         <i> 0000: Reserved
-//         <i> 0001: CLK period = 2 × HCLK periods
-//         <i> 0010: CLK period = 3 × HCLK periods
-//         <i> 1111: CLK period = 16 × HCLK periods (default value after reset)
-//         <i> In asynchronous NOR Flash, SRAM or ROM accesses, this value is don’t care.
+//         <i> 0001: CLK period = 2 ï¿½ HCLK periods
+//         <i> 0010: CLK period = 3 ï¿½ HCLK periods
+//         <i> 1111: CLK period = 16 ï¿½ HCLK periods (default value after reset)
+//         <i> In asynchronous NOR Flash, SRAM or ROM accesses, this value is donæŠ° care.
 //         <o3> BUSTURN: Bus turnaround phase duration <0-15>
 //         <i> Define the bus turnaround delay after a read access only
 //         <i> from multiplexed NOR Flash memory to avoid bus contention if the controller needs to drive
@@ -2506,34 +2506,34 @@
 //         <i> high to NEx low) and the maximum time needed by the memory to free the data bus after a
 //         <i> read access (tEHQZ):
 //         <i> (BUSTRUN + 1)HCLK period = tEHELmin and (BUSTRUN + 2)HCLK period = tEHQZmax if
-//         <i> EXTMOD = ‘0’
-//         <i> (BUSTRUN + 2)HCLK period = max (tEHELmin, tEHQZmax) if EXTMOD = ‘1’.
+//         <i> EXTMOD = ï¿½0ï¿½
+//         <i> (BUSTRUN + 2)HCLK period = max (tEHELmin, tEHQZmax) if EXTMOD = ï¿½1ï¿½.
 //         <i> 0000: BUSTURN phase duration = 0 HCLK clock cycle added
 //         <i> ...
-//         <i> 1111: BUSTURN phase duration = 15 × HCLK clock cycles (default value after reset)
+//         <i> 1111: BUSTURN phase duration = 15 ï¿½ HCLK clock cycles (default value after reset)
 //         <o4> DATAST: Data phase duration <1-255>
 //         <i> Define the duration of the data phase used in SRAMs, ROMs and asynchronous NOR Flash accesses.
 //         <i> 0000 0000: Reserved
-//         <i> 0000 0001: DATAST phase duration = 1 × HCLK clock cycles
-//         <i> 0000 0010: DATAST phase duration = 2 × HCLK clock cycles
+//         <i> 0000 0001: DATAST phase duration = 1 ï¿½ HCLK clock cycles
+//         <i> 0000 0010: DATAST phase duration = 2 ï¿½ HCLK clock cycles
 //         <i> ...
-//         <i> 1111 1111: DATAST phase duration = 255 × HCLK clock cycles (default value after reset)
+//         <i> 1111 1111: DATAST phase duration = 255 ï¿½ HCLK clock cycles (default value after reset)
 //         <i> Note: In synchronous accesses, this value is don't care.
 //         <o5> ADDHLD: Address hold phase duration <1-15>
 //         <i> Define the duration of the address hold phase used in mode D and multiplexed accesses.
 //         <i> 0000: Reserved
-//         <i> 0001: ADDHLD phase duration =1 × HCLK clock cycle
-//         <i> 0010: ADDHLD phase duration = 2 × HCLK clock cycle
+//         <i> 0001: ADDHLD phase duration =1 ï¿½ HCLK clock cycle
+//         <i> 0010: ADDHLD phase duration = 2 ï¿½ HCLK clock cycle
 //         <i> ...
-//         <i> 1111: ADDHLD phase duration = 15 × HCLK clock cycles (default value after reset)
+//         <i> 1111: ADDHLD phase duration = 15 ï¿½ HCLK clock cycles (default value after reset)
 //         <i> Note: In synchronous accesses, this value is not used, the address hold phase is always 1
 //         <i> memory clock period duration.
 //         <o6> ADDSET: Address setup phase duration <0-15>
 //         <i> Define the duration of the address setup phase used in SRAMs, ROMs and asynchronous NOR Flash accesses.
-//         <i> 0000: ADDSET phase duration = 0 × HCLK clock cycle
+//         <i> 0000: ADDSET phase duration = 0 ï¿½ HCLK clock cycle
 //         <i> ...
-//         <i> 1111: ADDSET phase duration = 1615 × HCLK clock cycles (default value after reset)
-//         <i> Note: In synchronous accesses, this value is don’t care.
+//         <i> 1111: ADDSET phase duration = 1615 ï¿½ HCLK clock cycles (default value after reset)
+//         <i> Note: In synchronous accesses, this value is donæŠ° care.
 #define RTE_FSMC_BTR1_ACCMOD            0
 #define RTE_FSMC_BTR1_DATLAT            15
 #define RTE_FSMC_BTR1_CLKDIV            15
@@ -2554,15 +2554,15 @@
 //         <i> ...
 //         <i> 1111: (0xF) Data latency of 17 CLK clock cycles for first burst access (default value after reset)
 //         <i> Note: This timing parameter is not expressed in HCLK periods, but in Flash clock (CLK) periods. In
-//         <i> asynchronous NOR Flash, SRAM or ROM accesses, this value is don’t care. In case of
+//         <i> asynchronous NOR Flash, SRAM or ROM accesses, this value is donæŠ° care. In case of
 //         <i> CRAM, this field must be set to 0
 //         <o2> CLKDIV: Clock divide ratio (for CLK signal) <1-15>
 //         <i> Defines the period of CLK clock output signal, expressed in number of HCLK cycles.
 //         <i> 0000: Reserved
-//         <i> 0001 CLK period = 2 × HCLK periods
-//         <i> 0010 CLK period = 3 × HCLK periods
-//         <i> 1111: CLK period = 16 × HCLK periods (default value after reset)
-//         <i> In asynchronous NOR Flash, SRAM or ROM accesses, this value is don’t care.
+//         <i> 0001 CLK period = 2 ï¿½ HCLK periods
+//         <i> 0010 CLK period = 3 ï¿½ HCLK periods
+//         <i> 1111: CLK period = 16 ï¿½ HCLK periods (default value after reset)
+//         <i> In asynchronous NOR Flash, SRAM or ROM accesses, this value is donæŠ° care.
 //         <o3> BUSTURN: Bus turnaround phase duration <0-15>
 //         <i> Defines a delay at the end of a write transaction to match the minimum time between consecutive transactions (tEHEL from ENx high to ENx low).
 //         <i> (BUSTRUN + 1) HCLK period = tEHELmin.
@@ -2572,25 +2572,25 @@
 //         <o4> DATAST: Data phase duration <1-255>
 //         <i> Defines the duration of the data phase used in SRAMs, ROMs and asynchronous NOR Flash accesses.
 //         <i> 0000 0000: Reserved
-//         <i> 0000 0001: DATAST phase duration = 1 × HCLK clock cycles
-//         <i> 0000 0010: DATAST phase duration = 2 × HCLK clock cycles
+//         <i> 0000 0001: DATAST phase duration = 1 ï¿½ HCLK clock cycles
+//         <i> 0000 0010: DATAST phase duration = 2 ï¿½ HCLK clock cycles
 //         <i> ...
-//         <i> 1111 1111: DATAST phase duration = 255 × HCLK clock cycles (default value after reset)
+//         <i> 1111 1111: DATAST phase duration = 255 ï¿½ HCLK clock cycles (default value after reset)
 //         <i> Note: In synchronous accesses, this value is don't care.
 //         <o5> ADDHLD: Address hold phase duration <1-15>
 //         <i> Defines the duration of the address hold phase used in SRAMs, ROMs and asynchronous multiplexed NOR Flash accesses.
 //         <i> 0000: Reserved
-//         <i> 0001: ADDHLD phase duration = 1 × HCLK clock cycle
-//         <i> 0010: ADDHLD phase duration = 2 × HCLK clock cycle
+//         <i> 0001: ADDHLD phase duration = 1 ï¿½ HCLK clock cycle
+//         <i> 0010: ADDHLD phase duration = 2 ï¿½ HCLK clock cycle
 //         <i> ...
-//         <i> 1111: ADDHLD phase duration = 15 × HCLK clock cycles (default value after reset)
+//         <i> 1111: ADDHLD phase duration = 15 ï¿½ HCLK clock cycles (default value after reset)
 //         <i> Note: In synchronous NOR Flash accesses, this value is not used, the address hold phase is always 1 Flash clock period duration.
 //         <o6> ADDSET: Address setup phase duration <1-15>
 //         <i> Defines the duration of the address setup phase in HCLK cycles used in SRAMs, ROMs and asynchronous NOR Flash accessed.
-//         <i> 0000: ADDSET phase duration = 0 × HCLK clock cycle
+//         <i> 0000: ADDSET phase duration = 0 ï¿½ HCLK clock cycle
 //         <i> ...
-//         <i> 1111: ADDSET phase duration = 15 × HCLK clock cycles (default value after reset)
-//         <i> Note: In synchronous NOR Flash accesses, this value is don’t care.
+//         <i> 1111: ADDSET phase duration = 15 ï¿½ HCLK clock cycles (default value after reset)
+//         <i> Note: In synchronous NOR Flash accesses, this value is donæŠ° care.
 #define RTE_FSMC_BWTR1_ACCMOD        0
 #define RTE_FSMC_BWTR1_DATLAT        15
 #define RTE_FSMC_BWTR1_CLKDIV        15
@@ -2663,14 +2663,14 @@
 //         <i> 1111: Data latency of 17 CLK clock cycles for first burst access (default value after reset)
 //         <i> Note: This timing parameter is not expressed in HCLK periods, but in Flash clock (CLK)
 //         <i> periods. In asynchronous NOR Flash, SRAM or ROM accesses, this value is don't care.
-//         <i> In the case of CRAM, this field must be set to ‘0’.
+//         <i> In the case of CRAM, this field must be set to ï¿½0ï¿½.
 //         <o2> CLKDIV: Clock divide ratio (for CLK signal) <1-15>
 //         <i> Defines the period of CLK clock output signal, expressed in number of HCLK cycles:
 //         <i> 0000: Reserved
-//         <i> 0001: CLK period = 2 × HCLK periods
-//         <i> 0010: CLK period = 3 × HCLK periods
-//         <i> 1111: CLK period = 16 × HCLK periods (default value after reset)
-//         <i> In asynchronous NOR Flash, SRAM or ROM accesses, this value is don’t care.
+//         <i> 0001: CLK period = 2 ï¿½ HCLK periods
+//         <i> 0010: CLK period = 3 ï¿½ HCLK periods
+//         <i> 1111: CLK period = 16 ï¿½ HCLK periods (default value after reset)
+//         <i> In asynchronous NOR Flash, SRAM or ROM accesses, this value is donæŠ° care.
 //         <o3> BUSTURN: Bus turnaround phase duration <0-15>
 //         <i> Define the bus turnaround delay after a read access only
 //         <i> from multiplexed NOR Flash memory to avoid bus contention if the controller needs to drive
@@ -2682,34 +2682,34 @@
 //         <i> high to NEx low) and the maximum time needed by the memory to free the data bus after a
 //         <i> read access (tEHQZ):
 //         <i> (BUSTRUN + 1)HCLK period = tEHELmin and (BUSTRUN + 2)HCLK period = tEHQZmax if
-//         <i> EXTMOD = ‘0’
-//         <i> (BUSTRUN + 2)HCLK period = max (tEHELmin, tEHQZmax) if EXTMOD = ‘1’.
+//         <i> EXTMOD = ï¿½0ï¿½
+//         <i> (BUSTRUN + 2)HCLK period = max (tEHELmin, tEHQZmax) if EXTMOD = ï¿½1ï¿½.
 //         <i> 0000: BUSTURN phase duration = 0 HCLK clock cycle added
 //         <i> ...
-//         <i> 1111: BUSTURN phase duration = 15 × HCLK clock cycles (default value after reset)
+//         <i> 1111: BUSTURN phase duration = 15 ï¿½ HCLK clock cycles (default value after reset)
 //         <o4> DATAST: Data phase duration <1-255>
 //         <i> Define the duration of the data phase used in SRAMs, ROMs and asynchronous NOR Flash accesses.
 //         <i> 0000 0000: Reserved
-//         <i> 0000 0001: DATAST phase duration = 1 × HCLK clock cycles
-//         <i> 0000 0010: DATAST phase duration = 2 × HCLK clock cycles
+//         <i> 0000 0001: DATAST phase duration = 1 ï¿½ HCLK clock cycles
+//         <i> 0000 0010: DATAST phase duration = 2 ï¿½ HCLK clock cycles
 //         <i> ...
-//         <i> 1111 1111: DATAST phase duration = 255 × HCLK clock cycles (default value after reset)
+//         <i> 1111 1111: DATAST phase duration = 255 ï¿½ HCLK clock cycles (default value after reset)
 //         <i> Note: In synchronous accesses, this value is don't care.
 //         <o5> ADDHLD: Address hold phase duration <1-15>
 //         <i> Define the duration of the address hold phase used in mode D and multiplexed accesses.
 //         <i> 0000: Reserved
-//         <i> 0001: ADDHLD phase duration =1 × HCLK clock cycle
-//         <i> 0010: ADDHLD phase duration = 2 × HCLK clock cycle
+//         <i> 0001: ADDHLD phase duration =1 ï¿½ HCLK clock cycle
+//         <i> 0010: ADDHLD phase duration = 2 ï¿½ HCLK clock cycle
 //         <i> ...
-//         <i> 1111: ADDHLD phase duration = 15 × HCLK clock cycles (default value after reset)
+//         <i> 1111: ADDHLD phase duration = 15 ï¿½ HCLK clock cycles (default value after reset)
 //         <i> Note: In synchronous accesses, this value is not used, the address hold phase is always 1
 //         <i> memory clock period duration.
 //         <o6> ADDSET: Address setup phase duration <0-15>
 //         <i> Define the duration of the address setup phase used in SRAMs, ROMs and asynchronous NOR Flash accesses.
-//         <i> 0000: ADDSET phase duration = 0 × HCLK clock cycle
+//         <i> 0000: ADDSET phase duration = 0 ï¿½ HCLK clock cycle
 //         <i> ...
-//         <i> 1111: ADDSET phase duration = 1615 × HCLK clock cycles (default value after reset)
-//         <i> Note: In synchronous accesses, this value is don’t care.
+//         <i> 1111: ADDSET phase duration = 1615 ï¿½ HCLK clock cycles (default value after reset)
+//         <i> Note: In synchronous accesses, this value is donæŠ° care.
 #define RTE_FSMC_BTR2_ACCMOD            0
 #define RTE_FSMC_BTR2_DATLAT            15
 #define RTE_FSMC_BTR2_CLKDIV            15
@@ -2730,15 +2730,15 @@
 //         <i> ...
 //         <i> 1111: (0xF) Data latency of 17 CLK clock cycles for first burst access (default value after reset)
 //         <i> Note: This timing parameter is not expressed in HCLK periods, but in Flash clock (CLK) periods. In
-//         <i> asynchronous NOR Flash, SRAM or ROM accesses, this value is don’t care. In case of
+//         <i> asynchronous NOR Flash, SRAM or ROM accesses, this value is donæŠ° care. In case of
 //         <i> CRAM, this field must be set to 0
 //         <o2> CLKDIV: Clock divide ratio (for CLK signal) <1-15>
 //         <i> Defines the period of CLK clock output signal, expressed in number of HCLK cycles.
 //         <i> 0000: Reserved
-//         <i> 0001 CLK period = 2 × HCLK periods
-//         <i> 0010 CLK period = 3 × HCLK periods
-//         <i> 1111: CLK period = 16 × HCLK periods (default value after reset)
-//         <i> In asynchronous NOR Flash, SRAM or ROM accesses, this value is don’t care.
+//         <i> 0001 CLK period = 2 ï¿½ HCLK periods
+//         <i> 0010 CLK period = 3 ï¿½ HCLK periods
+//         <i> 1111: CLK period = 16 ï¿½ HCLK periods (default value after reset)
+//         <i> In asynchronous NOR Flash, SRAM or ROM accesses, this value is donæŠ° care.
 //         <o3> BUSTURN: Bus turnaround phase duration <0-15>
 //         <i> Defines a delay at the end of a write transaction to match the minimum time between consecutive transactions (tEHEL from ENx high to ENx low).
 //         <i> (BUSTRUN + 1) HCLK period = tEHELmin.
@@ -2748,25 +2748,25 @@
 //         <o4> DATAST: Data phase duration <1-255>
 //         <i> Defines the duration of the data phase used in SRAMs, ROMs and asynchronous NOR Flash accesses.
 //         <i> 0000 0000: Reserved
-//         <i> 0000 0001: DATAST phase duration = 1 × HCLK clock cycles
-//         <i> 0000 0010: DATAST phase duration = 2 × HCLK clock cycles
+//         <i> 0000 0001: DATAST phase duration = 1 ï¿½ HCLK clock cycles
+//         <i> 0000 0010: DATAST phase duration = 2 ï¿½ HCLK clock cycles
 //         <i> ...
-//         <i> 1111 1111: DATAST phase duration = 255 × HCLK clock cycles (default value after reset)
+//         <i> 1111 1111: DATAST phase duration = 255 ï¿½ HCLK clock cycles (default value after reset)
 //         <i> Note: In synchronous accesses, this value is don't care.
 //         <o5> ADDHLD: Address hold phase duration <1-15>
 //         <i> Defines the duration of the address hold phase used in SRAMs, ROMs and asynchronous multiplexed NOR Flash accesses.
 //         <i> 0000: Reserved
-//         <i> 0001: ADDHLD phase duration = 1 × HCLK clock cycle
-//         <i> 0010: ADDHLD phase duration = 2 × HCLK clock cycle
+//         <i> 0001: ADDHLD phase duration = 1 ï¿½ HCLK clock cycle
+//         <i> 0010: ADDHLD phase duration = 2 ï¿½ HCLK clock cycle
 //         <i> ...
-//         <i> 1111: ADDHLD phase duration = 15 × HCLK clock cycles (default value after reset)
+//         <i> 1111: ADDHLD phase duration = 15 ï¿½ HCLK clock cycles (default value after reset)
 //         <i> Note: In synchronous NOR Flash accesses, this value is not used, the address hold phase is always 1 Flash clock period duration.
 //         <o6> ADDSET: Address setup phase duration <1-15>
 //         <i> Defines the duration of the address setup phase in HCLK cycles used in SRAMs, ROMs and asynchronous NOR Flash accessed.
-//         <i> 0000: ADDSET phase duration = 0 × HCLK clock cycle
+//         <i> 0000: ADDSET phase duration = 0 ï¿½ HCLK clock cycle
 //         <i> ...
-//         <i> 1111: ADDSET phase duration = 15 × HCLK clock cycles (default value after reset)
-//         <i> Note: In synchronous NOR Flash accesses, this value is don’t care.
+//         <i> 1111: ADDSET phase duration = 15 ï¿½ HCLK clock cycles (default value after reset)
+//         <i> Note: In synchronous NOR Flash accesses, this value is donæŠ° care.
 #define RTE_FSMC_BWTR2_ACCMOD        0
 #define RTE_FSMC_BWTR2_DATLAT        15
 #define RTE_FSMC_BWTR2_CLKDIV        15
@@ -2839,14 +2839,14 @@
 //         <i> 1111: Data latency of 17 CLK clock cycles for first burst access (default value after reset)
 //         <i> Note: This timing parameter is not expressed in HCLK periods, but in Flash clock (CLK)
 //         <i> periods. In asynchronous NOR Flash, SRAM or ROM accesses, this value is don't care.
-//         <i> In the case of CRAM, this field must be set to ‘0’.
+//         <i> In the case of CRAM, this field must be set to ï¿½0ï¿½.
 //         <o2> CLKDIV: Clock divide ratio (for CLK signal) <1-15>
 //         <i> Defines the period of CLK clock output signal, expressed in number of HCLK cycles:
 //         <i> 0000: Reserved
-//         <i> 0001: CLK period = 2 × HCLK periods
-//         <i> 0010: CLK period = 3 × HCLK periods
-//         <i> 1111: CLK period = 16 × HCLK periods (default value after reset)
-//         <i> In asynchronous NOR Flash, SRAM or ROM accesses, this value is don’t care.
+//         <i> 0001: CLK period = 2 ï¿½ HCLK periods
+//         <i> 0010: CLK period = 3 ï¿½ HCLK periods
+//         <i> 1111: CLK period = 16 ï¿½ HCLK periods (default value after reset)
+//         <i> In asynchronous NOR Flash, SRAM or ROM accesses, this value is donæŠ° care.
 //         <o3> BUSTURN: Bus turnaround phase duration <0-15>
 //         <i> Define the bus turnaround delay after a read access only
 //         <i> from multiplexed NOR Flash memory to avoid bus contention if the controller needs to drive
@@ -2858,34 +2858,34 @@
 //         <i> high to NEx low) and the maximum time needed by the memory to free the data bus after a
 //         <i> read access (tEHQZ):
 //         <i> (BUSTRUN + 1)HCLK period = tEHELmin and (BUSTRUN + 2)HCLK period = tEHQZmax if
-//         <i> EXTMOD = ‘0’
-//         <i> (BUSTRUN + 2)HCLK period = max (tEHELmin, tEHQZmax) if EXTMOD = ‘1’.
+//         <i> EXTMOD = ï¿½0ï¿½
+//         <i> (BUSTRUN + 2)HCLK period = max (tEHELmin, tEHQZmax) if EXTMOD = ï¿½1ï¿½.
 //         <i> 0000: BUSTURN phase duration = 0 HCLK clock cycle added
 //         <i> ...
-//         <i> 1111: BUSTURN phase duration = 15 × HCLK clock cycles (default value after reset)
+//         <i> 1111: BUSTURN phase duration = 15 ï¿½ HCLK clock cycles (default value after reset)
 //         <o4> DATAST: Data phase duration <1-255>
 //         <i> Define the duration of the data phase used in SRAMs, ROMs and asynchronous NOR Flash accesses.
 //         <i> 0000 0000: Reserved
-//         <i> 0000 0001: DATAST phase duration = 1 × HCLK clock cycles
-//         <i> 0000 0010: DATAST phase duration = 2 × HCLK clock cycles
+//         <i> 0000 0001: DATAST phase duration = 1 ï¿½ HCLK clock cycles
+//         <i> 0000 0010: DATAST phase duration = 2 ï¿½ HCLK clock cycles
 //         <i> ...
-//         <i> 1111 1111: DATAST phase duration = 255 × HCLK clock cycles (default value after reset)
+//         <i> 1111 1111: DATAST phase duration = 255 ï¿½ HCLK clock cycles (default value after reset)
 //         <i> Note: In synchronous accesses, this value is don't care.
 //         <o5> ADDHLD: Address hold phase duration <1-15>
 //         <i> Define the duration of the address hold phase used in mode D and multiplexed accesses.
 //         <i> 0000: Reserved
-//         <i> 0001: ADDHLD phase duration =1 × HCLK clock cycle
-//         <i> 0010: ADDHLD phase duration = 2 × HCLK clock cycle
+//         <i> 0001: ADDHLD phase duration =1 ï¿½ HCLK clock cycle
+//         <i> 0010: ADDHLD phase duration = 2 ï¿½ HCLK clock cycle
 //         <i> ...
-//         <i> 1111: ADDHLD phase duration = 15 × HCLK clock cycles (default value after reset)
+//         <i> 1111: ADDHLD phase duration = 15 ï¿½ HCLK clock cycles (default value after reset)
 //         <i> Note: In synchronous accesses, this value is not used, the address hold phase is always 1
 //         <i> memory clock period duration.
 //         <o6> ADDSET: Address setup phase duration <0-15>
 //         <i> Define the duration of the address setup phase used in SRAMs, ROMs and asynchronous NOR Flash accesses.
-//         <i> 0000: ADDSET phase duration = 0 × HCLK clock cycle
+//         <i> 0000: ADDSET phase duration = 0 ï¿½ HCLK clock cycle
 //         <i> ...
-//         <i> 1111: ADDSET phase duration = 1615 × HCLK clock cycles (default value after reset)
-//         <i> Note: In synchronous accesses, this value is don’t care.
+//         <i> 1111: ADDSET phase duration = 1615 ï¿½ HCLK clock cycles (default value after reset)
+//         <i> Note: In synchronous accesses, this value is donæŠ° care.
 #define RTE_FSMC_BTR3_ACCMOD            0
 #define RTE_FSMC_BTR3_DATLAT            15
 #define RTE_FSMC_BTR3_CLKDIV            15
@@ -2906,15 +2906,15 @@
 //         <i> ...
 //         <i> 1111: (0xF) Data latency of 17 CLK clock cycles for first burst access (default value after reset)
 //         <i> Note: This timing parameter is not expressed in HCLK periods, but in Flash clock (CLK) periods. In
-//         <i> asynchronous NOR Flash, SRAM or ROM accesses, this value is don’t care. In case of
+//         <i> asynchronous NOR Flash, SRAM or ROM accesses, this value is donæŠ° care. In case of
 //         <i> CRAM, this field must be set to 0
 //         <o2> CLKDIV: Clock divide ratio (for CLK signal) <1-15>
 //         <i> Defines the period of CLK clock output signal, expressed in number of HCLK cycles.
 //         <i> 0000: Reserved
-//         <i> 0001 CLK period = 2 × HCLK periods
-//         <i> 0010 CLK period = 3 × HCLK periods
-//         <i> 1111: CLK period = 16 × HCLK periods (default value after reset)
-//         <i> In asynchronous NOR Flash, SRAM or ROM accesses, this value is don’t care.
+//         <i> 0001 CLK period = 2 ï¿½ HCLK periods
+//         <i> 0010 CLK period = 3 ï¿½ HCLK periods
+//         <i> 1111: CLK period = 16 ï¿½ HCLK periods (default value after reset)
+//         <i> In asynchronous NOR Flash, SRAM or ROM accesses, this value is donæŠ° care.
 //         <o3> BUSTURN: Bus turnaround phase duration <0-15>
 //         <i> Defines a delay at the end of a write transaction to match the minimum time between consecutive transactions (tEHEL from ENx high to ENx low).
 //         <i> (BUSTRUN + 1) HCLK period = tEHELmin.
@@ -2924,25 +2924,25 @@
 //         <o4> DATAST: Data phase duration <1-255>
 //         <i> Defines the duration of the data phase used in SRAMs, ROMs and asynchronous NOR Flash accesses.
 //         <i> 0000 0000: Reserved
-//         <i> 0000 0001: DATAST phase duration = 1 × HCLK clock cycles
-//         <i> 0000 0010: DATAST phase duration = 2 × HCLK clock cycles
+//         <i> 0000 0001: DATAST phase duration = 1 ï¿½ HCLK clock cycles
+//         <i> 0000 0010: DATAST phase duration = 2 ï¿½ HCLK clock cycles
 //         <i> ...
-//         <i> 1111 1111: DATAST phase duration = 255 × HCLK clock cycles (default value after reset)
+//         <i> 1111 1111: DATAST phase duration = 255 ï¿½ HCLK clock cycles (default value after reset)
 //         <i> Note: In synchronous accesses, this value is don't care.
 //         <o5> ADDHLD: Address hold phase duration <1-15>
 //         <i> Defines the duration of the address hold phase used in SRAMs, ROMs and asynchronous multiplexed NOR Flash accesses.
 //         <i> 0000: Reserved
-//         <i> 0001: ADDHLD phase duration = 1 × HCLK clock cycle
-//         <i> 0010: ADDHLD phase duration = 2 × HCLK clock cycle
+//         <i> 0001: ADDHLD phase duration = 1 ï¿½ HCLK clock cycle
+//         <i> 0010: ADDHLD phase duration = 2 ï¿½ HCLK clock cycle
 //         <i> ...
-//         <i> 1111: ADDHLD phase duration = 15 × HCLK clock cycles (default value after reset)
+//         <i> 1111: ADDHLD phase duration = 15 ï¿½ HCLK clock cycles (default value after reset)
 //         <i> Note: In synchronous NOR Flash accesses, this value is not used, the address hold phase is always 1 Flash clock period duration.
 //         <o6> ADDSET: Address setup phase duration <1-15>
 //         <i> Defines the duration of the address setup phase in HCLK cycles used in SRAMs, ROMs and asynchronous NOR Flash accessed.
-//         <i> 0000: ADDSET phase duration = 0 × HCLK clock cycle
+//         <i> 0000: ADDSET phase duration = 0 ï¿½ HCLK clock cycle
 //         <i> ...
-//         <i> 1111: ADDSET phase duration = 15 × HCLK clock cycles (default value after reset)
-//         <i> Note: In synchronous NOR Flash accesses, this value is don’t care.
+//         <i> 1111: ADDSET phase duration = 15 ï¿½ HCLK clock cycles (default value after reset)
+//         <i> Note: In synchronous NOR Flash accesses, this value is donæŠ° care.
 #define RTE_FSMC_BWTR3_ACCMOD        0
 #define RTE_FSMC_BWTR3_DATLAT        15
 #define RTE_FSMC_BWTR3_CLKDIV        15
@@ -3015,14 +3015,14 @@
 //         <i> 1111: Data latency of 17 CLK clock cycles for first burst access (default value after reset)
 //         <i> Note: This timing parameter is not expressed in HCLK periods, but in Flash clock (CLK)
 //         <i> periods. In asynchronous NOR Flash, SRAM or ROM accesses, this value is don't care.
-//         <i> In the case of CRAM, this field must be set to ‘0’.
+//         <i> In the case of CRAM, this field must be set to ï¿½0ï¿½.
 //         <o2> CLKDIV: Clock divide ratio (for CLK signal) <1-15>
 //         <i> Defines the period of CLK clock output signal, expressed in number of HCLK cycles:
 //         <i> 0000: Reserved
-//         <i> 0001: CLK period = 2 × HCLK periods
-//         <i> 0010: CLK period = 3 × HCLK periods
-//         <i> 1111: CLK period = 16 × HCLK periods (default value after reset)
-//         <i> In asynchronous NOR Flash, SRAM or ROM accesses, this value is don’t care.
+//         <i> 0001: CLK period = 2 ï¿½ HCLK periods
+//         <i> 0010: CLK period = 3 ï¿½ HCLK periods
+//         <i> 1111: CLK period = 16 ï¿½ HCLK periods (default value after reset)
+//         <i> In asynchronous NOR Flash, SRAM or ROM accesses, this value is donæŠ° care.
 //         <o3> BUSTURN: Bus turnaround phase duration <0-15>
 //         <i> Define the bus turnaround delay after a read access only
 //         <i> from multiplexed NOR Flash memory to avoid bus contention if the controller needs to drive
@@ -3034,34 +3034,34 @@
 //         <i> high to NEx low) and the maximum time needed by the memory to free the data bus after a
 //         <i> read access (tEHQZ):
 //         <i> (BUSTRUN + 1)HCLK period = tEHELmin and (BUSTRUN + 2)HCLK period = tEHQZmax if
-//         <i> EXTMOD = ‘0’
-//         <i> (BUSTRUN + 2)HCLK period = max (tEHELmin, tEHQZmax) if EXTMOD = ‘1’.
+//         <i> EXTMOD = ï¿½0ï¿½
+//         <i> (BUSTRUN + 2)HCLK period = max (tEHELmin, tEHQZmax) if EXTMOD = ï¿½1ï¿½.
 //         <i> 0000: BUSTURN phase duration = 0 HCLK clock cycle added
 //         <i> ...
-//         <i> 1111: BUSTURN phase duration = 15 × HCLK clock cycles (default value after reset)
+//         <i> 1111: BUSTURN phase duration = 15 ï¿½ HCLK clock cycles (default value after reset)
 //         <o4> DATAST: Data phase duration <1-255>
 //         <i> Define the duration of the data phase used in SRAMs, ROMs and asynchronous NOR Flash accesses.
 //         <i> 0000 0000: Reserved
-//         <i> 0000 0001: DATAST phase duration = 1 × HCLK clock cycles
-//         <i> 0000 0010: DATAST phase duration = 2 × HCLK clock cycles
+//         <i> 0000 0001: DATAST phase duration = 1 ï¿½ HCLK clock cycles
+//         <i> 0000 0010: DATAST phase duration = 2 ï¿½ HCLK clock cycles
 //         <i> ...
-//         <i> 1111 1111: DATAST phase duration = 255 × HCLK clock cycles (default value after reset)
+//         <i> 1111 1111: DATAST phase duration = 255 ï¿½ HCLK clock cycles (default value after reset)
 //         <i> Note: In synchronous accesses, this value is don't care.
 //         <o5> ADDHLD: Address hold phase duration <1-15>
 //         <i> Define the duration of the address hold phase used in mode D and multiplexed accesses.
 //         <i> 0000: Reserved
-//         <i> 0001: ADDHLD phase duration =1 × HCLK clock cycle
-//         <i> 0010: ADDHLD phase duration = 2 × HCLK clock cycle
+//         <i> 0001: ADDHLD phase duration =1 ï¿½ HCLK clock cycle
+//         <i> 0010: ADDHLD phase duration = 2 ï¿½ HCLK clock cycle
 //         <i> ...
-//         <i> 1111: ADDHLD phase duration = 15 × HCLK clock cycles (default value after reset)
+//         <i> 1111: ADDHLD phase duration = 15 ï¿½ HCLK clock cycles (default value after reset)
 //         <i> Note: In synchronous accesses, this value is not used, the address hold phase is always 1
 //         <i> memory clock period duration.
 //         <o6> ADDSET: Address setup phase duration <0-15>
 //         <i> Define the duration of the address setup phase used in SRAMs, ROMs and asynchronous NOR Flash accesses.
-//         <i> 0000: ADDSET phase duration = 0 × HCLK clock cycle
+//         <i> 0000: ADDSET phase duration = 0 ï¿½ HCLK clock cycle
 //         <i> ...
-//         <i> 1111: ADDSET phase duration = 1615 × HCLK clock cycles (default value after reset)
-//         <i> Note: In synchronous accesses, this value is don’t care.
+//         <i> 1111: ADDSET phase duration = 1615 ï¿½ HCLK clock cycles (default value after reset)
+//         <i> Note: In synchronous accesses, this value is donæŠ° care.
 #define RTE_FSMC_BTR4_ACCMOD            0
 #define RTE_FSMC_BTR4_DATLAT            15
 #define RTE_FSMC_BTR4_CLKDIV            15
@@ -3082,15 +3082,15 @@
 //         <i> ...
 //         <i> 1111: (0xF) Data latency of 17 CLK clock cycles for first burst access (default value after reset)
 //         <i> Note: This timing parameter is not expressed in HCLK periods, but in Flash clock (CLK) periods. In
-//         <i> asynchronous NOR Flash, SRAM or ROM accesses, this value is don’t care. In case of
+//         <i> asynchronous NOR Flash, SRAM or ROM accesses, this value is donæŠ° care. In case of
 //         <i> CRAM, this field must be set to 0
 //         <o2> CLKDIV: Clock divide ratio (for CLK signal) <1-15>
 //         <i> Defines the period of CLK clock output signal, expressed in number of HCLK cycles.
 //         <i> 0000: Reserved
-//         <i> 0001 CLK period = 2 × HCLK periods
-//         <i> 0010 CLK period = 3 × HCLK periods
-//         <i> 1111: CLK period = 16 × HCLK periods (default value after reset)
-//         <i> In asynchronous NOR Flash, SRAM or ROM accesses, this value is don’t care.
+//         <i> 0001 CLK period = 2 ï¿½ HCLK periods
+//         <i> 0010 CLK period = 3 ï¿½ HCLK periods
+//         <i> 1111: CLK period = 16 ï¿½ HCLK periods (default value after reset)
+//         <i> In asynchronous NOR Flash, SRAM or ROM accesses, this value is donæŠ° care.
 //         <o3> BUSTURN: Bus turnaround phase duration <0-15>
 //         <i> Defines a delay at the end of a write transaction to match the minimum time between consecutive transactions (tEHEL from ENx high to ENx low).
 //         <i> (BUSTRUN + 1) HCLK period = tEHELmin.
@@ -3100,25 +3100,25 @@
 //         <o4> DATAST: Data phase duration <1-255>
 //         <i> Defines the duration of the data phase used in SRAMs, ROMs and asynchronous NOR Flash accesses.
 //         <i> 0000 0000: Reserved
-//         <i> 0000 0001: DATAST phase duration = 1 × HCLK clock cycles
-//         <i> 0000 0010: DATAST phase duration = 2 × HCLK clock cycles
+//         <i> 0000 0001: DATAST phase duration = 1 ï¿½ HCLK clock cycles
+//         <i> 0000 0010: DATAST phase duration = 2 ï¿½ HCLK clock cycles
 //         <i> ...
-//         <i> 1111 1111: DATAST phase duration = 255 × HCLK clock cycles (default value after reset)
+//         <i> 1111 1111: DATAST phase duration = 255 ï¿½ HCLK clock cycles (default value after reset)
 //         <i> Note: In synchronous accesses, this value is don't care.
 //         <o5> ADDHLD: Address hold phase duration <1-15>
 //         <i> Defines the duration of the address hold phase used in SRAMs, ROMs and asynchronous multiplexed NOR Flash accesses.
 //         <i> 0000: Reserved
-//         <i> 0001: ADDHLD phase duration = 1 × HCLK clock cycle
-//         <i> 0010: ADDHLD phase duration = 2 × HCLK clock cycle
+//         <i> 0001: ADDHLD phase duration = 1 ï¿½ HCLK clock cycle
+//         <i> 0010: ADDHLD phase duration = 2 ï¿½ HCLK clock cycle
 //         <i> ...
-//         <i> 1111: ADDHLD phase duration = 15 × HCLK clock cycles (default value after reset)
+//         <i> 1111: ADDHLD phase duration = 15 ï¿½ HCLK clock cycles (default value after reset)
 //         <i> Note: In synchronous NOR Flash accesses, this value is not used, the address hold phase is always 1 Flash clock period duration.
 //         <o6> ADDSET: Address setup phase duration <1-15>
 //         <i> Defines the duration of the address setup phase in HCLK cycles used in SRAMs, ROMs and asynchronous NOR Flash accessed.
-//         <i> 0000: ADDSET phase duration = 0 × HCLK clock cycle
+//         <i> 0000: ADDSET phase duration = 0 ï¿½ HCLK clock cycle
 //         <i> ...
-//         <i> 1111: ADDSET phase duration = 15 × HCLK clock cycles (default value after reset)
-//         <i> Note: In synchronous NOR Flash accesses, this value is don’t care.
+//         <i> 1111: ADDSET phase duration = 15 ï¿½ HCLK clock cycles (default value after reset)
+//         <i> Note: In synchronous NOR Flash accesses, this value is donæŠ° care.
 #define RTE_FSMC_BWTR4_ACCMOD        0
 #define RTE_FSMC_BWTR4_DATLAT        15
 #define RTE_FSMC_BWTR4_CLKDIV        15
@@ -3142,13 +3142,13 @@
 //         <i> Defines the page size for the extended ECC.
 //         <o1> TAR: ALE to RE delay <0-15>
 //         <i> Sets time from ALE low to RE low in number of AHB clock cycles (HCLK).
-//         <i> Time is: t_ar = (TAR + SET + 2) × THCLK where THCLK is the HCLK clock period
+//         <i> Time is: t_ar = (TAR + SET + 2) ï¿½ THCLK where THCLK is the HCLK clock period
 //         <i> 0000: 1 HCLK cycle (default)
 //         <i> 1111: 16 HCLK cycles
 //         <i> Note: SET is MEMSET or ATTSET according to the addressed space.
 //         <o2> TCLR: CLE to RE delay <0-15>
 //         <i> Sets time from CLE low to RE low in number of AHB clock cycles (HCLK).
-//         <i> Time is t_clr = (TCLR + SET + 2) × THCLK where THCLK is the HCLK clock period
+//         <i> Time is t_clr = (TCLR + SET + 2) ï¿½ THCLK where THCLK is the HCLK clock period
 //         <i> 0000: 1 HCLK cycle (default)
 //         <i> 1111: 16 HCLK cycles
 //         <i> Note: SET is MEMSET or ATTSET according to the addressed space.
@@ -3255,13 +3255,13 @@
 //         <i> Defines the page size for the extended ECC.
 //         <o1> TAR: ALE to RE delay <0-15>
 //         <i> Sets time from ALE low to RE low in number of AHB clock cycles (HCLK).
-//         <i> Time is: t_ar = (TAR + SET + 2) × THCLK where THCLK is the HCLK clock period
+//         <i> Time is: t_ar = (TAR + SET + 2) ï¿½ THCLK where THCLK is the HCLK clock period
 //         <i> 0000: 1 HCLK cycle (default)
 //         <i> 1111: 16 HCLK cycles
 //         <i> Note: SET is MEMSET or ATTSET according to the addressed space.
 //         <o2> TCLR: CLE to RE delay <0-15>
 //         <i> Sets time from CLE low to RE low in number of AHB clock cycles (HCLK).
-//         <i> Time is t_clr = (TCLR + SET + 2) × THCLK where THCLK is the HCLK clock period
+//         <i> Time is t_clr = (TCLR + SET + 2) ï¿½ THCLK where THCLK is the HCLK clock period
 //         <i> 0000: 1 HCLK cycle (default)
 //         <i> 1111: 16 HCLK cycles
 //         <i> Note: SET is MEMSET or ATTSET according to the addressed space.
@@ -3372,13 +3372,13 @@
 //         <i> Defines the page size for the extended ECC.
 //         <o1> TAR: ALE to RE delay <0-15>
 //         <i> Sets time from ALE low to RE low in number of AHB clock cycles (HCLK).
-//         <i> Time is: t_ar = (TAR + SET + 2) × THCLK where THCLK is the HCLK clock period
+//         <i> Time is: t_ar = (TAR + SET + 2) ï¿½ THCLK where THCLK is the HCLK clock period
 //         <i> 0000: 1 HCLK cycle (default)
 //         <i> 1111: 16 HCLK cycles
 //         <i> Note: SET is MEMSET or ATTSET according to the addressed space.
 //         <o2> TCLR: CLE to RE delay <0-15>
 //         <i> Sets time from CLE low to RE low in number of AHB clock cycles (HCLK).
-//         <i> Time is t_clr = (TCLR + SET + 2) × THCLK where THCLK is the HCLK clock period
+//         <i> Time is t_clr = (TCLR + SET + 2) ï¿½ THCLK where THCLK is the HCLK clock period
 //         <i> 0000: 1 HCLK cycle (default)
 //         <i> 1111: 16 HCLK cycles
 //         <i> Note: SET is MEMSET or ATTSET according to the addressed space.

@@ -15,7 +15,7 @@
 #include <string.h>
 
 /* ---- private state (single-module owners stayed static) ---- */
-static char    s_last_msg[40] = "系统就绪";
+static char    s_last_msg[40] = "\xCF\xB5\xCD\xB3\xBE\xCD\xD0\xF7";
 static uint8_t s_link_shown = 0xFF;   /* 0xFF = repaint needed */
 
 static void StatusBar_Draw(void)
@@ -28,7 +28,7 @@ static void StatusBar_Draw(void)
 void StatusBar_Set(uint8_t src, uint8_t box_id, const char *msg)
 {
     char buf[48];
-    const char *tag = (src == SRC_VOICE) ? "语音" : "触摸";
+    const char *tag = (src == SRC_VOICE) ? "\xD3\xEF\xD2\xF4" : "\xB4\xA5\xC3\xFE";
     if (box_id)
         snprintf(buf, sizeof(buf), "[%s] #%d %s", tag, box_id, msg);
     else
@@ -42,7 +42,7 @@ static void TitleBar_Draw(void)
 {
     LCD_FillGradV(0, 0, LCD_W - 1, 33, UI_TITLE_TOP, UI_TITLE_BOT);
     LCD_Fill(0, 34, LCD_W - 1, 35, COLOR_ACCENT);
-    LCD_ShowStringCN(14, 1, "智能快递柜", COLOR_WHITE, UI_TITLE_MID, 2);
+    LCD_ShowStringCN(14, 1, "\xD6\xC7\xC4\xDC\xBF\xEC\xB5\xDD\xB9\xF1", COLOR_WHITE, UI_TITLE_MID, 2);
     s_link_shown = 0xFF;
 }
 
@@ -52,7 +52,7 @@ void TitleBar_DrawLink(void)
     if (s_link_shown == up) return;
     s_link_shown = up;
     LCD_FillRound(340, 4, 470, 30, 13, COLOR_BG);
-    LCD_ShowStringCN(381, 9, up ? "已连接" : "未连接",
+    LCD_ShowStringCN(381, 9, up ? "\xD2\xD1\xC1\xAC\xBD\xD3" : "\xCE\xB4\xC1\xAC\xBD\xD3",
                      up ? COLOR_GREEN : COLOR_GRAY, COLOR_BG, 1);
 }
 
@@ -62,8 +62,8 @@ void PickBtn_Draw(uint8_t pressed)
     LCD_FillRound(PICK_X1, PICK_Y1, PICK_X2, PICK_Y2, 18, bg);
     LCD_DrawRoundRect(PICK_X1, PICK_Y1, PICK_X2, PICK_Y2, 18,
                       pressed ? COLOR_WHITE : 0x5EB1);
-    LCD_ShowStringCN(208, 210, "取件", COLOR_WHITE, bg, 2);
-    LCD_ShowStringCN(176, 248, "请输入六位取件码", 0xCFDB, bg, 1);
+    LCD_ShowStringCN(208, 210, "\xC8\xA1\xBC\xFE", COLOR_WHITE, bg, 2);
+    LCD_ShowStringCN(176, 248, "\xC7\xEB\xCA\xE4\xC8\xEB\xC1\xF9\xCE\xBB\xC8\xA1\xBC\xFE\xC2\xEB", 0xCFDB, bg, 1);
 }
 
 uint8_t PickBtn_Scan(uint8_t touch_down, uint16_t x, uint16_t y)
@@ -92,17 +92,17 @@ void Menu_DrawVoxHint(const char *raw)
     LCD_Fill(0, 274, LCD_W - 1, 293, COLOR_BG);
     if (raw && raw[0])
     {
-        strcpy(buf, "听到:");
+        strcpy(buf, "\xCC\xFD\xB5\xBD:");
         strncat(buf, raw, sizeof(buf) - strlen(buf) - 1);
         LCD_ShowStringCN(8, 277, buf, COLOR_YELLOW, COLOR_BG, 1);
     }
     else if (!s_voice_seen && loop_tick > 1000)  /* 5s with no LD3320 data */
     {
-        LCD_ShowStringCN(140, 277, "语音模块无响应 请检查接线", COLOR_RED, COLOR_BG, 1);
+        LCD_ShowStringCN(140, 277, "\xD3\xEF\xD2\xF4\xC4\xA3\xBF\xE9\xCE\xDE\xCF\xEC\xD3\xA6 \xC7\xEB\xBC\xEC\xB2\xE9\xBD\xD3\xCF\xDF", COLOR_RED, COLOR_BG, 1);
     }
     else
     {
-        LCD_ShowStringCN(156, 277, "取件说小樱 对话说小智", COLOR_DIM, COLOR_BG, 1);
+        LCD_ShowStringCN(156, 277, "\xC8\xA1\xBC\xFE\xCB\xB5\xD0\xA1\xD3\xA3 \xB6\xD4\xBB\xB0\xCB\xB5\xD0\xA1\xD6\xC7", COLOR_DIM, COLOR_BG, 1);
     }
 }
 
@@ -110,13 +110,13 @@ void Menu_DrawChatPanel(void)
 {
     s_overlay = 1;
     static const char *kw[12] = {
-        "你好","讲个笑话","再见","谢谢",
-        "开启","关闭","你是谁","今天天气",
-        "现在几点","取件","",""
+        "\xC4\xE3\xBA\xC3","\xBD\xB2\xB8\xF6\xD0\xA6\xBB\xB0","\xD4\xD9\xBC\xFB","\xD0\xBB\xD0\xBB",
+        "\xBF\xAA\xC6\xF4","\xB9\xD8\xB1\xD5","\xC4\xE3\xCA\xC7\xCB\xAD","\xBD\xF1\xCC\xEC\xCC\xEC\xC6\xF8",
+        "\xCF\xD6\xD4\xDA\xBC\xB8\xB5\xE3","\xC8\xA1\xBC\xFE","",""
     };
     uint8_t i;
     LCD_Clear(0x18C3);
-    LCD_ShowStringCN(170, 8, "请说关键词", COLOR_YELLOW, 0x18C3, 2);
+    LCD_ShowStringCN(170, 8, "\xC7\xEB\xCB\xB5\xB9\xD8\xBC\xFC\xB4\xCA", COLOR_YELLOW, 0x18C3, 2);
     for (i = 0; i < 10; i++)
     {
         uint16_t col = i % 4;
@@ -126,18 +126,18 @@ void Menu_DrawChatPanel(void)
         LCD_Fill(x, y, x + 105, y + 45, 0x2E59);
         LCD_ShowStringCN(x + 8, y + 12, kw[i], COLOR_WHITE, 0x2E59, 2);
     }
-    LCD_ShowStringCN(120, 210, "说小智唤醒 再说关键词", COLOR_YELLOW, 0x18C3, 2);
+    LCD_ShowStringCN(120, 210, "\xCB\xB5\xD0\xA1\xD6\xC7\xBB\xBD\xD0\xD1 \xD4\xD9\xCB\xB5\xB9\xD8\xBC\xFC\xB4\xCA", COLOR_YELLOW, 0x18C3, 2);
 
     s_btn_back.x = 180; s_btn_back.y = 235;
     s_btn_back.w = 120; s_btn_back.h = 45;
-    s_btn_back.label = "返回";
+    s_btn_back.label = "\xB7\xB5\xBB\xD8";
     s_btn_back.bg_color = COLOR_BLUE;
     s_btn_back.press_color = COLOR_CYAN;
     s_btn_back.text_color = COLOR_WHITE;
     s_btn_back.border_color = COLOR_WHITE;
     s_btn_back.state = 0;
     Button_Draw(&s_btn_back);
-    StatusBar_Set(SRC_VOICE, 0, "语音已听到");
+    StatusBar_Set(SRC_VOICE, 0, "\xD3\xEF\xD2\xF4\xD2\xD1\xCC\xFD\xB5\xBD");
 }
 
 void Guide_ShowPartial(void)
@@ -148,7 +148,7 @@ void Guide_ShowPartial(void)
     for (i = 0; i < 6; i++)
         shown[i] = (i < s_vplen) ? s_vpart[i] : '_';
     shown[6] = 0;
-    sprintf(buf, "已输:%s", shown);
+    sprintf(buf, "\xD2\xD1\xCA\xE4:%s", shown);
     LCD_Fill(0, 204, LCD_W - 1, 224, 0x18C3);
     LCD_ShowStringCN(182, 206, buf, COLOR_GREEN, 0x18C3, 2);
 }
@@ -156,12 +156,12 @@ void Guide_ShowPartial(void)
 void Menu_DrawPickupGuide(void)
 {
     static const char *labels[12] = {
-        "0","1","2","3","4","5","6","7","8","9","删除","重输"
+        "0","1","2","3","4","5","6","7","8","9","\xC9\xBE\xB3\xFD","\xD6\xD8\xCA\xE4"
     };
     uint8_t i, row, col;
     s_overlay = 1;
     LCD_Clear(0x18C3);
-    LCD_ShowStringCN(200, 8, "请输入取件码", COLOR_YELLOW, 0x18C3, 2);
+    LCD_ShowStringCN(200, 8, "\xC7\xEB\xCA\xE4\xC8\xEB\xC8\xA1\xBC\xFE\xC2\xEB", COLOR_YELLOW, 0x18C3, 2);
     for (i = 0; i < 12; i++)
     {
         row = (uint8_t)(i / 3);
@@ -194,19 +194,19 @@ void Menu_DrawPickupGuide(void)
         Button_Draw(&s_pg_btns[i]);
     }
     Guide_ShowPartial();
-    LCD_ShowStringCN(20, 228, "0洞1幺2两 7拐9勾", COLOR_CYAN, 0x18C3, 1);
-    LCD_ShowStringCN(150, 228, "说数字或触摸输入", COLOR_YELLOW, 0x18C3, 1);
+    LCD_ShowStringCN(20, 228, "0\xB6\xB4" "1\xE7\xDB" "2\xC1\xBD 7\xB9\xD5" "9\xB9\xB4", COLOR_CYAN, 0x18C3, 1);
+    LCD_ShowStringCN(150, 228, "\xCB\xB5\xCA\xFD\xD7\xD6\xBB\xF2\xB4\xA5\xC3\xFE\xCA\xE4\xC8\xEB", COLOR_YELLOW, 0x18C3, 1);
 
     s_btn_back.x = 180; s_btn_back.y = 246;
     s_btn_back.w = 120; s_btn_back.h = 40;
-    s_btn_back.label = "返回";
+    s_btn_back.label = "\xB7\xB5\xBB\xD8";
     s_btn_back.bg_color = COLOR_BLUE;
     s_btn_back.press_color = COLOR_CYAN;
     s_btn_back.text_color = COLOR_WHITE;
     s_btn_back.border_color = COLOR_WHITE;
     s_btn_back.state = 0;
     Button_Draw(&s_btn_back);
-    StatusBar_Set(SRC_VOICE, 0, "请说或触摸输入取件码");
+    StatusBar_Set(SRC_VOICE, 0, "\xC7\xEB\xCB\xB5\xBB\xF2\xB4\xA5\xC3\xFE\xCA\xE4\xC8\xEB\xC8\xA1\xBC\xFE\xC2\xEB");
 }
 
 void Menu_DrawAdmin(void)
@@ -220,7 +220,7 @@ void Menu_DrawAdmin(void)
 
     /* header */
     LCD_Fill(0, 0, LCD_W - 1, 28, 0x3186);
-    LCD_ShowStringCN(208, 6, "取件记录", COLOR_WHITE, 0x3186, 2);
+    LCD_ShowStringCN(208, 6, "\xC8\xA1\xBC\xFE\xBC\xC7\xC2\xBC", COLOR_WHITE, 0x3186, 2);
 
     /* 4 boxes */
     for (i = 0; i < CODEBOX_COUNT; i++)
@@ -246,7 +246,7 @@ void Menu_DrawAdmin(void)
     /* back button */
     s_btn_admin_back.x = 180; s_btn_admin_back.y = 244;
     s_btn_admin_back.w = 120; s_btn_admin_back.h = 45;
-    s_btn_admin_back.label = "返回";
+    s_btn_admin_back.label = "\xB7\xB5\xBB\xD8";
     s_btn_admin_back.bg_color = COLOR_BLUE;
     s_btn_admin_back.press_color = COLOR_CYAN;
     s_btn_admin_back.text_color = COLOR_WHITE;
@@ -278,7 +278,7 @@ void DepositDone_Draw(void)
     LCD_Clear(COLOR_BLACK);
 
     LCD_Fill(0, 0, LCD_W - 1, 28, 0x3186);
-    LCD_ShowStringCN(224, 6, "投件", COLOR_WHITE, 0x3186, 2);
+    LCD_ShowStringCN(224, 6, "\xCD\xB6\xBC\xFE", COLOR_WHITE, 0x3186, 2);
 
     if (s_res_ok)
     {
@@ -289,13 +289,13 @@ void DepositDone_Draw(void)
     }
     else
     {
-    LCD_ShowStringCN(216, 70, "已开门", COLOR_RED, COLOR_BLACK, 2);
+    LCD_ShowStringCN(216, 70, "\xD2\xD1\xBF\xAA\xC3\xC5", COLOR_RED, COLOR_BLACK, 2);
         LCD_ShowStringCN(216, 110, s_res_msg, COLOR_YELLOW, COLOR_BLACK, 2);
     }
 
     s_btn_back.x = 180; s_btn_back.y = 220;
     s_btn_back.w = 120; s_btn_back.h = 50;
-    s_btn_back.label = "返回";
+    s_btn_back.label = "\xB7\xB5\xBB\xD8";
     s_btn_back.bg_color = COLOR_BLUE;
     s_btn_back.press_color = COLOR_CYAN;
     s_btn_back.text_color = COLOR_WHITE;
@@ -313,16 +313,16 @@ void PickupDone_Draw(void)
     LCD_Clear(COLOR_BLACK);
 
     LCD_Fill(0, 0, LCD_W - 1, 28, 0x3186);
-    LCD_ShowStringCN(224, 6, "取件", COLOR_WHITE, 0x3186, 2);
+    LCD_ShowStringCN(224, 6, "\xC8\xA1\xBC\xFE", COLOR_WHITE, 0x3186, 2);
 
     if (s_res_ok)
     {
-        sprintf(buf, "%d号箱已打开", s_res_box);
+        sprintf(buf, "%d\xBA\xC5\xCF\xE4\xD2\xD1\xB4\xF2\xBF\xAA", s_res_box);
         LCD_ShowStringCN(180, 48, buf, COLOR_GREEN, COLOR_BLACK, 2);
 
         s_btn_continue.x = 60;  s_btn_continue.y = 210;
         s_btn_continue.w = 160; s_btn_continue.h = 50;
-        s_btn_continue.label = "再取一件";
+        s_btn_continue.label = "\xD4\xD9\xC8\xA1\xD2\xBB\xBC\xFE";
         s_btn_continue.bg_color = COLOR_GREEN;
         s_btn_continue.press_color = COLOR_CYAN;
         s_btn_continue.text_color = COLOR_WHITE;
@@ -332,7 +332,7 @@ void PickupDone_Draw(void)
 
         s_btn_back.x = 260; s_btn_back.y = 210;
         s_btn_back.w = 160; s_btn_back.h = 50;
-        s_btn_back.label = "返回";
+        s_btn_back.label = "\xB7\xB5\xBB\xD8";
         s_btn_back.bg_color = COLOR_BLUE;
         s_btn_back.press_color = COLOR_CYAN;
         s_btn_back.text_color = COLOR_WHITE;
@@ -342,12 +342,12 @@ void PickupDone_Draw(void)
     }
     else
     {
-        LCD_ShowStringCN(200, 60, "取件码无效", COLOR_RED, COLOR_BLACK, 2);
+        LCD_ShowStringCN(200, 60, "\xC8\xA1\xBC\xFE\xC2\xEB\xCE\xDE\xD0\xA7", COLOR_RED, COLOR_BLACK, 2);
         LCD_ShowStringCN(200, 160, s_res_msg, COLOR_YELLOW, COLOR_BLACK, 2);
 
         s_btn_back.x = 180; s_btn_back.y = 210;
         s_btn_back.w = 120; s_btn_back.h = 50;
-        s_btn_back.label = "返回";
+        s_btn_back.label = "\xB7\xB5\xBB\xD8";
         s_btn_back.bg_color = COLOR_BLUE;
         s_btn_back.press_color = COLOR_CYAN;
         s_btn_back.text_color = COLOR_WHITE;

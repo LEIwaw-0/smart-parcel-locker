@@ -27,17 +27,17 @@ static const char *DoorPromptText(uint16_t *tx)
     if (phase == DOOR_W_OPEN)
     {
         *tx = 184;
-        return "请取你的物品";
+        return "\xC7\xEB\xC8\xA1\xC4\xE3\xB5\xC4\xCE\xEF\xC6\xB7";
     }
     if (phase == DOOR_W_CLOSE)
     {
         *tx = 154;
-        return (flow == 1) ? "门开中，请投件请关门"
-                           : "门开中，请取件请关门";
+        return (flow == 1) ? "\xC3\xC5\xBF\xAA\xD6\xD0\xA3\xAC\xC7\xEB\xCD\xB6\xBC\xFE\xC7\xEB\xB9\xD8\xC3\xC5"
+                           : "\xC3\xC5\xBF\xAA\xD6\xD0\xA3\xAC\xC7\xEB\xC8\xA1\xBC\xFE\xC7\xEB\xB9\xD8\xC3\xC5";
     }
     *tx = 162;
-    return (flow == 1) ? "门已关 投件完成"
-                       : "门已关 取件完成";
+    return (flow == 1) ? "\xC3\xC5\xD2\xD1\xB9\xD8 \xCD\xB6\xBC\xFE\xCD\xEA\xB3\xC9"
+                       : "\xC3\xC5\xD2\xD1\xB9\xD8 \xC8\xA1\xBC\xFE\xCD\xEA\xB3\xC9";
 }
 
 void DoorStatus_Update(void)
@@ -63,7 +63,7 @@ void DoorStatus_Update(void)
 
     if (fb != 2 && s_band_fb_cache != fb)
     {
-        const char *t = fb ? "状态:" : "状态:开";
+        const char *t = fb ? "\xD7\xB4\xCC\xAC:" : "\xD7\xB4\xCC\xAC:\xBF\xAA";
         s_band_fb_cache = fb;
         LCD_Fill(0, (uint16_t)(s_band_y + 26), LCD_W - 1, (uint16_t)(s_band_y + 46), COLOR_BLACK);
         LCD_ShowStringCN(194, (uint16_t)(s_band_y + 28), t,
@@ -121,13 +121,13 @@ void Door_Tick(void)
 
             if (s_door_flow[idx] == 1)
             {
-                SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]投件完成");
-                StatusBar_Set(s_door_src[idx], box, "投件完成");
+                SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xCD\xB6\xBC\xFE\xCD\xEA\xB3\xC9");
+                StatusBar_Set(s_door_src[idx], box, "\xCD\xB6\xBC\xFE\xCD\xEA\xB3\xC9");
             }
             else
             {
-                SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]取件完成");
-                StatusBar_Set(s_door_src[idx], box, "超时已完成");
+                SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xC8\xA1\xBC\xFE\xCD\xEA\xB3\xC9");
+                StatusBar_Set(s_door_src[idx], box, "\xB3\xAC\xCA\xB1\xD2\xD1\xCD\xEA\xB3\xC9");
             }
             printf("[DOOR] box %d timeout, flow %d complete\r\n", box, s_door_flow[idx]);
             if (s_res_box == box &&
@@ -159,21 +159,21 @@ void Door_Tick(void)
                         char cl[CLOUD_PEND_LEN];
                         sprintf(cl, "DEPOSITED %d", (int)box);
                         Cloud_Queue(cl);
-                        SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]投件完成");
-                        StatusBar_Set(s_door_src[idx], box, "投件完成");
+                        SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xCD\xB6\xBC\xFE\xCD\xEA\xB3\xC9");
+                        StatusBar_Set(s_door_src[idx], box, "\xCD\xB6\xBC\xFE\xCD\xEA\xB3\xC9");
                     }
                     else if (s_door_flow[idx] == 2)
                     {
                         char cl[CLOUD_PEND_LEN];
                         sprintf(cl, "PICKED %d", (int)box);
                         Cloud_Queue(cl);
-                        SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]取件完成");
-                        StatusBar_Set(s_door_src[idx], box, "取件完成");
+                        SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xC8\xA1\xBC\xFE\xCD\xEA\xB3\xC9");
+                        StatusBar_Set(s_door_src[idx], box, "\xC8\xA1\xBC\xFE\xCD\xEA\xB3\xC9");
                     }
                     else
                     {
-                        SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]门已关");
-                        StatusBar_Set(s_door_src[idx], box, "已关门");
+                        SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xC3\xC5\xD2\xD1\xB9\xD8");
+                        StatusBar_Set(s_door_src[idx], box, "\xD2\xD1\xB9\xD8\xC3\xC5");
                     }
 
                     printf("[DOOR] box %d closed, flow %d complete\r\n", box, s_door_flow[idx]);

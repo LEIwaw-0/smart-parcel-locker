@@ -1,29 +1,29 @@
 /**
   ******************************************************************************
   * @file    syn6288.c
-  * @brief   SYN6288 ÓïÒôºÏ³ÉÄ£¿éÇı¶¯ (STM32F407VE ²à, ´®¿Ú°æ)
+  * @brief   SYN6288 è¯­éŸ³åˆæˆæ¨¡å—é©±åŠ¨ (STM32F407VE ä¾§, ä¸²å£ç‰ˆ)
   *
-  * ½ÓÏß: STM32 PC10(UART4_TX) -> Ä£¿é RXD
-  *       Ä£¿é VCC->5V, GND->GND (Óë STM32 ¹²µØ)
-  *       Ä£¿é TXD ¿É²»½Ó (±¾Çı¶¯Îª TX-only)
-  * Ğ­Òé²Î¿¼: SYN6288 Êı¾İÊÖ²á + ³§¼Ò STM32F405 Àı³Ì
+  * æ¥çº¿: STM32 PC10(UART4_TX) -> æ¨¡å— RXD
+  *       æ¨¡å— VCC->5V, GND->GND (ä¸ STM32 å…±åœ°)
+  *       æ¨¡å— TXD å¯ä¸æ¥ (æœ¬é©±åŠ¨ä¸º TX-only)
+  * åè®®å‚è€ƒ: SYN6288 æ•°æ®æ‰‹å†Œ + å‚å®¶ STM32F405 ä¾‹ç¨‹
   ******************************************************************************
   */
 #include "syn6288.h"
 #include "delay.h"
 #include <string.h>
 
-/* ===================== ¿ØÖÆÃüÁî (5×Ö½Ú¶¨³¤, ECC ÒÑÔ¤Ëã) ===================== */
-/* ECC = 0xFD ^ 0x00 ^ 0x02 ^ ÃüÁîÂë, ÎŞÈ¡·´ */
-static const uint8_t SYN_StopCmd[]      = {0xFD, 0x00, 0x02, 0x02, 0xFD}; /* Í£Ö¹ºÏ³É */
-static const uint8_t SYN_SuspendCmd[]   = {0xFD, 0x00, 0x02, 0x03, 0xFC}; /* ÔİÍ£ºÏ³É */
-static const uint8_t SYN_RecoverCmd[]   = {0xFD, 0x00, 0x02, 0x04, 0xFB}; /* »Ö¸´ºÏ³É */
-static const uint8_t SYN_StatusCmd[]    = {0xFD, 0x00, 0x02, 0x21, 0xDE}; /* ×´Ì¬²éÑ¯ */
-static const uint8_t SYN_PowerDownCmd[] = {0xFD, 0x00, 0x02, 0x88, 0x77}; /* ½øÈëµôµç */
+/* ===================== æ§åˆ¶å‘½ä»¤ (5å­—èŠ‚å®šé•¿, ECC å·²é¢„ç®—) ===================== */
+/* ECC = 0xFD ^ 0x00 ^ 0x02 ^ å‘½ä»¤ç , æ— å–å */
+static const uint8_t SYN_StopCmd[]      = {0xFD, 0x00, 0x02, 0x02, 0xFD}; /* åœæ­¢åˆæˆ */
+static const uint8_t SYN_SuspendCmd[]   = {0xFD, 0x00, 0x02, 0x03, 0xFC}; /* æš‚åœåˆæˆ */
+static const uint8_t SYN_RecoverCmd[]   = {0xFD, 0x00, 0x02, 0x04, 0xFB}; /* æ¢å¤åˆæˆ */
+static const uint8_t SYN_StatusCmd[]    = {0xFD, 0x00, 0x02, 0x21, 0xDE}; /* çŠ¶æ€æŸ¥è¯¢ */
+static const uint8_t SYN_PowerDownCmd[] = {0xFD, 0x00, 0x02, 0x88, 0x77}; /* è¿›å…¥æ‰ç”µ */
 
-#define SYN_MAX_TEXT  96   /* µ¥Ö¡ÎÄ±¾×î´ó×Ö½ÚÊı (º¬±êÇ©), ±ÜÃâÖ¡»º³åÒç³ö */
+#define SYN_MAX_TEXT  96   /* å•å¸§æ–‡æœ¬æœ€å¤§å­—èŠ‚æ•° (å«æ ‡ç­¾), é¿å…å¸§ç¼“å†²æº¢å‡º */
 
-/* ===================== UART4 ³õÊ¼»¯: PC10 TX, 9600, ½ö·¢ËÍ ===================== */
+/* ===================== UART4 åˆå§‹åŒ–: PC10 TX, 9600, ä»…å‘é€ ===================== */
 void SYN6288_Init(void)
 {
     GPIO_InitTypeDef  GPIO_InitStructure;
@@ -32,7 +32,7 @@ void SYN6288_Init(void)
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART4, ENABLE);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
 
-    /* ½öÅäÖÃ PB10(TX), ²»ÅäÖÃ PC11(RX), TX-only */
+    /* ä»…é…ç½® PB10(TX), ä¸é…ç½® PC11(RX), TX-only */
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_10;
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
@@ -47,16 +47,16 @@ void SYN6288_Init(void)
     USART_InitStructure.USART_StopBits            = USART_StopBits_1;
     USART_InitStructure.USART_Parity              = USART_Parity_No;
     USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-    USART_InitStructure.USART_Mode                = USART_Mode_Tx;   /* ½ö·¢ËÍ */
+    USART_InitStructure.USART_Mode                = USART_Mode_Tx;   /* ä»…å‘é€ */
     USART_Init(UART4, &USART_InitStructure);
 
     USART_Cmd(UART4, ENABLE);
 
-    /* Ä£¿éÉÏµçÎÈ¶¨: Ê×ÌõÃüÁîÇ°ÖÁÉÙµÈ 500ms */
+    /* æ¨¡å—ä¸Šç”µç¨³å®š: é¦–æ¡å‘½ä»¤å‰è‡³å°‘ç­‰ 500ms */
     delay_ms(500);
 }
 
-/* ===================== µ×²ã·¢ËÍ ===================== */
+/* ===================== åº•å±‚å‘é€ ===================== */
 static void SYN_SendBytes(const uint8_t *buf, uint16_t len)
 {
     uint16_t i;
@@ -70,9 +70,9 @@ static void SYN_SendBytes(const uint8_t *buf, uint16_t len)
         ;
 }
 
-/* ===================== ÎÄ±¾ºÏ³ÉÖ¡ =====================
- * Ö¡: [0xFD][0x00][len+3][0x01][0x01|Music<<4][ÎÄ±¾...][ECC]
- * ECC = 0xFD ^ 0x00 ^ (len+3) ^ 0x01 ^ (0x01|Music<<4) ^ Ã¿¸öÎÄ±¾×Ö½Ú
+/* ===================== æ–‡æœ¬åˆæˆå¸§ =====================
+ * å¸§: [0xFD][0x00][len+3][0x01][0x01|Music<<4][æ–‡æœ¬...][ECC]
+ * ECC = 0xFD ^ 0x00 ^ (len+3) ^ 0x01 ^ (0x01|Music<<4) ^ æ¯ä¸ªæ–‡æœ¬å­—èŠ‚
  */
 void SYN_FrameInfo(uint8_t music, const uint8_t *text)
 {
@@ -85,24 +85,24 @@ void SYN_FrameInfo(uint8_t music, const uint8_t *text)
     if (text_len > SYN_MAX_TEXT)
         text_len = SYN_MAX_TEXT;
 
-    frame[0] = 0xFD;                       /* Ö¡Í· */
-    frame[1] = 0x00;                       /* Êı¾İÇø³¤¶È¸ß×Ö½Ú */
-    frame[2] = (uint8_t)(text_len + 3);    /* Êı¾İÇø³¤¶ÈµÍ×Ö½Ú */
-    frame[3] = 0x01;                       /* ÃüÁî: ºÏ³É²¢²¥·Å */
-    frame[4] = (uint8_t)(0x01 | (music << 4)); /* ²ÎÊı: GBK±àÂë + ±³¾°ÒôÀÖ */
+    frame[0] = 0xFD;                       /* å¸§å¤´ */
+    frame[1] = 0x00;                       /* æ•°æ®åŒºé•¿åº¦é«˜å­—èŠ‚ */
+    frame[2] = (uint8_t)(text_len + 3);    /* æ•°æ®åŒºé•¿åº¦ä½å­—èŠ‚ */
+    frame[3] = 0x01;                       /* å‘½ä»¤: åˆæˆå¹¶æ’­æ”¾ */
+    frame[4] = (uint8_t)(0x01 | (music << 4)); /* å‚æ•°: GBKç¼–ç  + èƒŒæ™¯éŸ³ä¹ */
 
-    memcpy(&frame[5], text, text_len);     /* ÎÄ±¾ÄÚÈİ */
+    memcpy(&frame[5], text, text_len);     /* æ–‡æœ¬å†…å®¹ */
 
-    for (i = 0; i < 5 + text_len; i++)     /* Òì»òĞ£Ñé: ´ÓÖ¡Í·µ½ÎÄ±¾Ä©Î² */
+    for (i = 0; i < 5 + text_len; i++)     /* å¼‚æˆ–æ ¡éªŒ: ä»å¸§å¤´åˆ°æ–‡æœ¬æœ«å°¾ */
         ecc ^= frame[i];
-    frame[5 + text_len] = ecc;             /* Ğ£Ñé×Ö½Ú (ÎŞÈ¡·´) */
+    frame[5 + text_len] = ecc;             /* æ ¡éªŒå­—èŠ‚ (æ— å–å) */
 
     SYN_SendBytes(frame, 5 + text_len + 1);
 
-    delay_ms(200);                         /* ÃüÁî¼ä×îĞ¡¼ä¸ô */
+    delay_ms(200);                         /* å‘½ä»¤é—´æœ€å°é—´éš” */
 }
 
-/* ===================== ¿ØÖÆÃüÁî ===================== */
+/* ===================== æ§åˆ¶å‘½ä»¤ ===================== */
 void SYN_SendCmd(const uint8_t *cmd, uint8_t len)
 {
     SYN_SendBytes(cmd, len);

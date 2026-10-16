@@ -1,28 +1,28 @@
 /**
   ******************************************************************************
   * @file    pcf8574.c
-  * @brief   PCF8574 8Î»I2C×¼Ë«ÏòIOÀ©Õ¹Çı¶¯
-  *          Èí¼şI2C(bit-bang, ¿ªÂ©): PB6=SCL, PB7=SDA
+  * @brief   PCF8574 8ä½I2Cå‡†åŒå‘IOæ‰©å±•é©±åŠ¨
+  *          è½¯ä»¶I2C(bit-bang, å¼€æ¼): PB6=SCL, PB7=SDA
   *
-  * ¸ÄÓÃÈí¼şI2CÔ­Òò: STM32F4Ó²¼şI2CÊ±Ğò¼æÈİĞÔ²î, ±¾¹¤³ÌÓ²¼şI2CÉ¨Ãè
-  * 0x20/0x38¾ùÎŞÓ¦´ğ; Èí¼şI2C²ÎÊıÓë±¾¹¤³Ìmatrix_keyboard³É¹¦¾­ÑéÒ»ÖÂ
-  * (Ô¼30kHz, Î»ÑÓÊ±17us, ACK½¨Á¢ÑÓÊ±50us, ¿ªÂ©+Íâ²¿4.7kÉÏÀ­,
-  *  ¿ªÂ©Ä£Ê½ÏÂĞ´1¼´ÊÍ·Å×ÜÏß, ÎŞĞèÇĞ»»GPIO·½Ïò)
+  * æ”¹ç”¨è½¯ä»¶I2CåŸå› : STM32F4ç¡¬ä»¶I2Cæ—¶åºå…¼å®¹æ€§å·®, æœ¬å·¥ç¨‹ç¡¬ä»¶I2Cæ‰«æ
+  * 0x20/0x38å‡æ— åº”ç­”; è½¯ä»¶I2Cå‚æ•°ä¸æœ¬å·¥ç¨‹matrix_keyboardæˆåŠŸç»éªŒä¸€è‡´
+  * (çº¦30kHz, ä½å»¶æ—¶17us, ACKå»ºç«‹å»¶æ—¶50us, å¼€æ¼+å¤–éƒ¨4.7kä¸Šæ‹‰,
+  *  å¼€æ¼æ¨¡å¼ä¸‹å†™1å³é‡Šæ”¾æ€»çº¿, æ— éœ€åˆ‡æ¢GPIOæ–¹å‘)
   *
-  * Òı½ÅÓë½ÓÏßÓëÓ²¼şI2C°æ±¾ÍêÈ«ÏàÍ¬, ÎŞĞè¸Ä¶¯ÈÎºÎÍâ²¿½ÓÏß
+  * å¼•è„šä¸æ¥çº¿ä¸ç¡¬ä»¶I2Cç‰ˆæœ¬å®Œå…¨ç›¸åŒ, æ— éœ€æ”¹åŠ¨ä»»ä½•å¤–éƒ¨æ¥çº¿
   ******************************************************************************
   */
 #include "pcf8574.h"
 #include "delay.h"
 
-/* Èí¼şI2CÊ±Ğò²ÎÊı(Óëmatrix_keyboardÒ»ÖÂ, Ô¼30kHz) */
-#define I2C_BIT_DELAY_US     17u     /* °ëÎ»ÖÜÆÚ, SCL¸ß/µÍµçÆ½Ê±¼ä */
-#define I2C_ACK_SETTLE_US    50u     /* ACKÊ±ÖÓÇ°SDAÊÍ·Å½¨Á¢Ê±¼ä */
+/* è½¯ä»¶I2Cæ—¶åºå‚æ•°(ä¸matrix_keyboardä¸€è‡´, çº¦30kHz) */
+#define I2C_BIT_DELAY_US     17u     /* åŠä½å‘¨æœŸ, SCLé«˜/ä½ç”µå¹³æ—¶é—´ */
+#define I2C_ACK_SETTLE_US    50u     /* ACKæ—¶é’Ÿå‰SDAé‡Šæ”¾å»ºç«‹æ—¶é—´ */
 
-/* Êµ¼ÊÊ¹ÓÃµÄ7Î»µØÖ·, Ä¬ÈÏ0x20, É¨Ãèµ½0x38ÔòÇĞ»» */
+/* å®é™…ä½¿ç”¨çš„7ä½åœ°å€, é»˜è®¤0x20, æ‰«æåˆ°0x38åˆ™åˆ‡æ¢ */
 static uint8_t pcf_addr = PCF8574_ADDR;
 
-/* ---------------- ¿ªÂ©Òı½Å²Ù×÷: Ğ´1=ÊÍ·Å(Íâ²¿ÉÏÀ­À­¸ß), Ğ´0=À­µÍ ---------------- */
+/* ---------------- å¼€æ¼å¼•è„šæ“ä½œ: å†™1=é‡Šæ”¾(å¤–éƒ¨ä¸Šæ‹‰æ‹‰é«˜), å†™0=æ‹‰ä½ ---------------- */
 #define SCL_HIGH()   GPIO_WriteBit(GPIOB, GPIO_Pin_6, Bit_SET)
 #define SCL_LOW()    GPIO_WriteBit(GPIOB, GPIO_Pin_6, Bit_RESET)
 #define SDA_HIGH()   GPIO_WriteBit(GPIOB, GPIO_Pin_7, Bit_SET)
@@ -35,7 +35,7 @@ static void I2C_Delay(void)
     delay_us(I2C_BIT_DELAY_US);
 }
 
-/* Ö÷»ú·¢ËÍÆğÊ¼: SCL¸ßµçÆ½Ê±SDAÓÉ¸ß±äµÍ */
+/* ä¸»æœºå‘é€èµ·å§‹: SCLé«˜ç”µå¹³æ—¶SDAç”±é«˜å˜ä½ */
 static void I2C_Start(void)
 {
     SDA_HIGH();
@@ -47,7 +47,7 @@ static void I2C_Start(void)
     I2C_Delay();
 }
 
-/* Ö÷»ú·¢ËÍÍ£Ö¹: SCL¸ßµçÆ½Ê±SDAÓÉµÍ±ä¸ß */
+/* ä¸»æœºå‘é€åœæ­¢: SCLé«˜ç”µå¹³æ—¶SDAç”±ä½å˜é«˜ */
 static void I2C_Stop(void)
 {
     SDA_LOW();
@@ -57,7 +57,7 @@ static void I2C_Stop(void)
     I2C_Delay();
 }
 
-/* Ö÷»ú·¢ËÍ1×Ö½Ú, ·µ»Ø´Ó»úACK: 0=ACK(ÓĞÉè±¸), 1=NACK(ÎŞÉè±¸) */
+/* ä¸»æœºå‘é€1å­—èŠ‚, è¿”å›ä»æœºACK: 0=ACK(æœ‰è®¾å¤‡), 1=NACK(æ— è®¾å¤‡) */
 static uint8_t I2C_WriteByteRaw(uint8_t data)
 {
     uint8_t i;
@@ -65,34 +65,34 @@ static uint8_t I2C_WriteByteRaw(uint8_t data)
 
     for (i = 0; i < 8; i++)
     {
-        /* SCLµÍµçÆ½ÆÚ¼ä¸Ä±äSDA */
+        /* SCLä½ç”µå¹³æœŸé—´æ”¹å˜SDA */
         if (data & 0x80) SDA_HIGH();
         else             SDA_LOW();
         data <<= 1;
         I2C_Delay();
-        SCL_HIGH();                 /* ´Ó»úÔÚSCL¸ßµçÆ½²ÉÑù */
+        SCL_HIGH();                 /* ä»æœºåœ¨SCLé«˜ç”µå¹³é‡‡æ · */
         I2C_Delay();
         SCL_LOW();
     }
 
-    /* µÚ9¸öÊ±ÖÓ¶ÁACK */
-    SDA_HIGH();                     /* Ö÷»úÊÍ·ÅSDA */
-    delay_us(I2C_ACK_SETTLE_US);    /* ½¨Á¢Ê±¼ä, µÈ´Ó»úÀ­µÍ */
+    /* ç¬¬9ä¸ªæ—¶é’Ÿè¯»ACK */
+    SDA_HIGH();                     /* ä¸»æœºé‡Šæ”¾SDA */
+    delay_us(I2C_ACK_SETTLE_US);    /* å»ºç«‹æ—¶é—´, ç­‰ä»æœºæ‹‰ä½ */
     SCL_HIGH();
     I2C_Delay();
-    ack = (SDA_READ() == Bit_RESET) ? 0 : 1;   /* µÍ=ACK */
+    ack = (SDA_READ() == Bit_RESET) ? 0 : 1;   /* ä½=ACK */
     SCL_LOW();
     I2C_Delay();
     return ack;
 }
 
-/* Ö÷»ú¶Á1×Ö½Ú. ack=0·¢ACK(¼ÌĞø¶Á), ack=1·¢NACK(¶ÁÍê) */
+/* ä¸»æœºè¯»1å­—èŠ‚. ack=0å‘ACK(ç»§ç»­è¯»), ack=1å‘NACK(è¯»å®Œ) */
 static uint8_t I2C_ReadByteRaw(uint8_t ack)
 {
     uint8_t i;
     uint8_t data = 0;
 
-    SDA_HIGH();                     /* Ö÷»úÊÍ·ÅSDA, ½»¸ø´Ó»úÇı¶¯ */
+    SDA_HIGH();                     /* ä¸»æœºé‡Šæ”¾SDA, äº¤ç»™ä»æœºé©±åŠ¨ */
     for (i = 0; i < 8; i++)
     {
         SCL_HIGH();
@@ -103,27 +103,27 @@ static uint8_t I2C_ReadByteRaw(uint8_t ack)
         I2C_Delay();
     }
 
-    /* Ö÷»ú·¢ËÍACK/NACK */
-    if (ack) SDA_HIGH();            /* ·ÇÓ¦´ğ */
-    else     SDA_LOW();             /* Ó¦´ğ */
+    /* ä¸»æœºå‘é€ACK/NACK */
+    if (ack) SDA_HIGH();            /* éåº”ç­” */
+    else     SDA_LOW();             /* åº”ç­” */
     I2C_Delay();
     SCL_HIGH();
     I2C_Delay();
     SCL_LOW();
-    SDA_HIGH();                     /* ÊÍ·ÅSDA */
+    SDA_HIGH();                     /* é‡Šæ”¾SDA */
     I2C_Delay();
     return data;
 }
 
 static uint8_t PCF8574_Probe(uint8_t addr7);
-/* ===================== È«µØÖ·É¨Ãè(0x01~0x7E) ===================== */
+/* ===================== å…¨åœ°å€æ‰«æ(0x01~0x7E) ===================== */
 uint8_t PCF8574_ScanBus(uint8_t *addr_list, uint8_t max_count)
 {
     uint8_t a;
     uint8_t n = 0;
     for (a = 0x01; a <= 0x7E; a++)
     {
-        /* Ìø¹ıI2C±£ÁôµØÖ·¶Î 0000xxx/1111xxx(0x00-0x07,0x78-0x7F) */
+        /* è·³è¿‡I2Cä¿ç•™åœ°å€æ®µ 0000xxx/1111xxx(0x00-0x07,0x78-0x7F) */
         if (a <= 0x07 || a >= 0x78) continue;
         if (PCF8574_Probe(a))
         {
@@ -134,40 +134,40 @@ uint8_t PCF8574_ScanBus(uint8_t *addr_list, uint8_t max_count)
     return n;
 }
 
-/* Ì½²â7Î»µØÖ·: 1=Éè±¸´æÔÚ(ACK), 0=ÎŞÉè±¸ */
+/* æ¢æµ‹7ä½åœ°å€: 1=è®¾å¤‡å­˜åœ¨(ACK), 0=æ— è®¾å¤‡ */
 static uint8_t PCF8574_Probe(uint8_t addr7)
 {
     uint8_t ack;
     I2C_Start();
-    ack = I2C_WriteByteRaw((uint8_t)(addr7 << 1));   /* Ğ´²Ù×÷Ñ°Ö· */
+    ack = I2C_WriteByteRaw((uint8_t)(addr7 << 1));   /* å†™æ“ä½œå¯»å€ */
     I2C_Stop();
     return (ack == 0) ? 1 : 0;
 }
 
-/* ===================== GPIO³õÊ¼»¯ + µØÖ·É¨Ãè ===================== */
+/* ===================== GPIOåˆå§‹åŒ– + åœ°å€æ‰«æ ===================== */
 uint8_t PCF8574_Init(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
     uint8_t found_addr = 0;
 
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
-    /* ²»¿ªÓ²¼şI2C1Ê±ÖÓ, ´¿Èí¼şÄ£Äâ */
+    /* ä¸å¼€ç¡¬ä»¶I2C1æ—¶é’Ÿ, çº¯è½¯ä»¶æ¨¡æ‹Ÿ */
 
-    /* PB6=SCL, PB7=SDA, ¿ªÂ©Êä³ö; Ğ´1Ê±ÊÍ·Å×ÜÏßÓÉÍâ²¿4.7k¦¸ÉÏÀ­,
-     * Í¬Ê±¿É¶ÁÊäÈë¼Ä´æÆ÷»ñÈ¡Êµ¼ÊµçÆ½, ÎŞĞèÇĞ»»ÊäÈë/Êä³ö·½Ïò */
+    /* PB6=SCL, PB7=SDA, å¼€æ¼è¾“å‡º; å†™1æ—¶é‡Šæ”¾æ€»çº¿ç”±å¤–éƒ¨4.7kÎ©ä¸Šæ‹‰,
+     * åŒæ—¶å¯è¯»è¾“å…¥å¯„å­˜å™¨è·å–å®é™…ç”µå¹³, æ— éœ€åˆ‡æ¢è¾“å…¥/è¾“å‡ºæ–¹å‘ */
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_6 | GPIO_Pin_7;
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;   /* ÄÚ²¿ÉÏÀ­+Íâ²¿4.7k¦¸ */
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;   /* å†…éƒ¨ä¸Šæ‹‰+å¤–éƒ¨4.7kÎ© */
     GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-    /* ×ÜÏß¿ÕÏĞÌ¬ */
+    /* æ€»çº¿ç©ºé—²æ€ */
     SCL_HIGH();
     SDA_HIGH();
     delay_us(50);
 
-    /* È«µØÖ·É¨Ãè: ÓÅÏÈ0x20, Æä´Î0x38, ÔÙ´ÎÈÎÒâÓ¦´ğµØÖ·(¼æÈİ²¦Âë·½Ïò²îÒì) */
+    /* å…¨åœ°å€æ‰«æ: ä¼˜å…ˆ0x20, å…¶æ¬¡0x38, å†æ¬¡ä»»æ„åº”ç­”åœ°å€(å…¼å®¹æ‹¨ç æ–¹å‘å·®å¼‚) */
     {
         uint8_t list[16];
         uint8_t n = PCF8574_ScanBus(list, 16);
@@ -195,13 +195,13 @@ uint8_t PCF8574_Init(void)
         }
         if (found_addr == 0 && n > 0)
         {
-            /* É¨µ½Éè±¸µ«²»ÊÇ0x20/0x38: Ö±½ÓÓÃµÚÒ»¸öÓ¦´ğµØÖ·(¶àÎª²¦Âë×´Ì¬²»Í¬) */
+            /* æ‰«åˆ°è®¾å¤‡ä½†ä¸æ˜¯0x20/0x38: ç›´æ¥ç”¨ç¬¬ä¸€ä¸ªåº”ç­”åœ°å€(å¤šä¸ºæ‹¨ç çŠ¶æ€ä¸åŒ) */
             pcf_addr = list[0];
             found_addr = list[0];
         }
     }
 
-    /* ÎŞÂÛÉ¨Ã»É¨µ½¶¼·¢Ò»´Î°²È«µçÆ½(Ê§°ÜÓÉÉÏ²ãÈÕÖ¾ÌåÏÖ) */
+    /* æ— è®ºæ‰«æ²¡æ‰«åˆ°éƒ½å‘ä¸€æ¬¡å®‰å…¨ç”µå¹³(å¤±è´¥ç”±ä¸Šå±‚æ—¥å¿—ä½“ç°) */
     PCF8574_WriteByte(PCF8574_SAFE_OUTPUT);
     return found_addr;
 }
@@ -211,24 +211,24 @@ uint8_t PCF8574_GetAddr(void)
     return pcf_addr;
 }
 
-/* ===================== ×ÜÏßÎïÀí²ã×Ô¼ì(²»ÒÀÀµ´Ó»ú) ===================== */
+/* ===================== æ€»çº¿ç‰©ç†å±‚è‡ªæ£€(ä¸ä¾èµ–ä»æœº) ===================== */
 void PCF8574_BusDiag(PCF_BusDiag_t *d)
 {
-    /* 1) ¿ÕÏĞµçÆ½: Á½ÏßÊÍ·Å, ¸ø×ãÊ±¼äÈÃÉÏÀ­(º¬ÄÚ²¿ÈõÉÏÀ­)³äµç */
+    /* 1) ç©ºé—²ç”µå¹³: ä¸¤çº¿é‡Šæ”¾, ç»™è¶³æ—¶é—´è®©ä¸Šæ‹‰(å«å†…éƒ¨å¼±ä¸Šæ‹‰)å……ç”µ */
     SCL_HIGH();
     SDA_HIGH();
     delay_ms(2);
     d->scl_idle = (SCL_READ() == Bit_SET) ? 1 : 0;
     d->sda_idle = (SDA_READ() == Bit_SET) ? 1 : 0;
 
-    /* 2) Ö÷¶¯À­µÍ»Ø¶Á: ÑéÖ¤MCUÒı½ÅÄÜÇı¶¯ÇÒÏßÈ·ÊµÁ¬µ½²âÊÔµã */
+    /* 2) ä¸»åŠ¨æ‹‰ä½å›è¯»: éªŒè¯MCUå¼•è„šèƒ½é©±åŠ¨ä¸”çº¿ç¡®å®è¿åˆ°æµ‹è¯•ç‚¹ */
     SCL_LOW();
     SDA_LOW();
     delay_ms(1);
     d->scl_pulldown_ok = (SCL_READ() == Bit_RESET) ? 1 : 0;
     d->sda_pulldown_ok = (SDA_READ() == Bit_RESET) ? 1 : 0;
 
-    /* 3) ÊÍ·Å»Ø¶Á: ÑéÖ¤ÉÏÀ­Í¨Â·(Íâ²¿4.7k»òÄÚ²¿ÉÏÀ­)ÄÜ°ÑÏßÀ­¸ß */
+    /* 3) é‡Šæ”¾å›è¯»: éªŒè¯ä¸Šæ‹‰é€šè·¯(å¤–éƒ¨4.7kæˆ–å†…éƒ¨ä¸Šæ‹‰)èƒ½æŠŠçº¿æ‹‰é«˜ */
     SCL_HIGH();
     SDA_HIGH();
     delay_ms(2);
@@ -236,21 +236,21 @@ void PCF8574_BusDiag(PCF_BusDiag_t *d)
     d->sda_release_ok = (SDA_READ() == Bit_SET) ? 1 : 0;
 }
 
-/* ===================== Ğ´1×Ö½Ú ===================== */
+/* ===================== å†™1å­—èŠ‚ ===================== */
 uint8_t PCF8574_WriteByte(uint8_t data)
 {
     uint8_t err = 0;
 
     I2C_Start();
-    if (I2C_WriteByteRaw((uint8_t)(pcf_addr << 1))) { err = 1; goto out; }  /* µØÖ·ACK */
-    if (I2C_WriteByteRaw(data))                     { err = 1; goto out; }  /* Êı¾İACK */
+    if (I2C_WriteByteRaw((uint8_t)(pcf_addr << 1))) { err = 1; goto out; }  /* åœ°å€ACK */
+    if (I2C_WriteByteRaw(data))                     { err = 1; goto out; }  /* æ•°æ®ACK */
 
 out:
     I2C_Stop();
     return err;
 }
 
-/* ===================== ¶Á1×Ö½Ú(NACKºóSTOP) ===================== */
+/* ===================== è¯»1å­—èŠ‚(NACKåSTOP) ===================== */
 uint8_t PCF8574_ReadByte(uint8_t *val)
 {
     uint8_t err = 0;
@@ -258,7 +258,7 @@ uint8_t PCF8574_ReadByte(uint8_t *val)
     *val = 0xFF;
     I2C_Start();
     if (I2C_WriteByteRaw((uint8_t)((pcf_addr << 1) | 0x01))) { err = 1; goto out; }
-    *val = I2C_ReadByteRaw(1);    /* Ö»¶Á1×Ö½Ú, ·¢NACK */
+    *val = I2C_ReadByteRaw(1);    /* åªè¯»1å­—èŠ‚, å‘NACK */
 
 out:
     I2C_Stop();

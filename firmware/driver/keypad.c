@@ -8,14 +8,14 @@
 #include "lcd.h"
 #include <string.h>
 
-/* ²¼¾Ö³£Á¿(480x320ºáÆÁ) * ±êÌâ(24)+ÌáÊ¾(16)+ÊäÈë¸ñ(40)=80; °´¼ü´Óy=88¿ªÊ¼¡£ * 5ĞĞ*36¸ß+4*4¼ä¾à=196; ½áÊøÓÚ92+196=288¡£×´Ì¬À¸ÔÚ296¡£ */
+/* å¸ƒå±€å¸¸é‡(480x320æ¨ªå±) * æ ‡é¢˜(24)+æç¤º(16)+è¾“å…¥æ ¼(40)=80; æŒ‰é”®ä»y=88å¼€å§‹ã€‚ * 5è¡Œ*36é«˜+4*4é—´è·=196; ç»“æŸäº92+196=288ã€‚çŠ¶æ€æ åœ¨296ã€‚ */
 #define KP_TITLE_H     24
 #define KP_PROMPT_H    16
 #define KP_CELL_W      44
 #define KP_CELL_H      40
 #define KP_CELL_GAP    10
 #define KP_CELL_Y      (KP_TITLE_H + KP_PROMPT_H + 4)
-/* 6¸öÊäÈë¸ñ: ×Ü¿í=6*44+5*10=314; ¾ÓÖĞÔÚ(480-314)/2=83 */
+/* 6ä¸ªè¾“å…¥æ ¼: æ€»å®½=6*44+5*10=314; å±…ä¸­åœ¨(480-314)/2=83 */
 #define KP_CELL_X0     83
 
 #define KP_BTN_W       72
@@ -23,10 +23,10 @@
 #define KP_BTN_GAP_X   10
 #define KP_BTN_GAP_Y   4
 #define KP_BTN_Y0      (KP_CELL_Y + KP_CELL_H + 8)
-/* 4ÁĞ: 4*72+3*10=318; ¾ÓÖĞÔÚ(480-318)/2=81 */
+/* 4åˆ—: 4*72+3*10=318; å±…ä¸­åœ¨(480-318)/2=81 */
 #define KP_BTN_X0      81
 
-/* 13 buttons: '1'..'9','<'(back),'0','ÖØÊä','È·ÈÏ'(spans 3 cols) */
+/* 13 buttons: '1'..'9','<'(back),'0','é‡è¾“','ç¡®è®¤'(spans 3 cols) */
 #define KP_N_BTNS  13
 
 static Button_t s_btns[KP_N_BTNS];
@@ -35,7 +35,7 @@ static uint8_t  s_count = 0;
 static char     s_title[24];
 static char     s_prompt[32];
 
-/* »æÖÆ6¸öÊäÈë¸ñ¼°µ±Ç°Êı×Ö¡£ */
+/* ç»˜åˆ¶6ä¸ªè¾“å…¥æ ¼åŠå½“å‰æ•°å­—ã€‚ */
 static void Kp_DrawCells(void)
 {
     uint8_t i;
@@ -64,7 +64,7 @@ static void Kp_DrawCells(void)
         }
         else
         {
-            /* ÏÂÒ»¸ñµÄ¹â±ê */
+            /* ä¸‹ä¸€æ ¼çš„å…‰æ ‡ */
             LCD_ShowString(x + (KP_CELL_W - 12) / 2,
                            KP_CELL_Y + (KP_CELL_H - 16) / 2,
                            "_", fc, bc, 2);
@@ -73,11 +73,11 @@ static void Kp_DrawCells(void)
     }
 }
 
-/* 5 rows: 1 2 3 | 4 5 6 | 7 8 9 | < 0 ÖØÊä | È·ÈÏ(full width) */
+/* 5 rows: 1 2 3 | 4 5 6 | 7 8 9 | < 0 é‡è¾“ | ç¡®è®¤(full width) */
 static void Kp_SetupBtns(void)
 {
     static const char *labels[KP_N_BTNS] = {
-        "1","2","3","4","5","6","7","8","9","<","0","ÖØÊä","È·ÈÏ"
+        "1","2","3","4","5","6","7","8","9","<","0","\xD6\xD8\xCA\xE4","\xC8\xB7\xC8\xCF"
     };
     uint8_t i, row, col;
     for (i = 0; i < KP_N_BTNS; i++)
@@ -89,21 +89,21 @@ static void Kp_SetupBtns(void)
         s_btns[i].w = KP_BTN_W;
         s_btns[i].h = KP_BTN_H;
         s_btns[i].label = labels[i];
-        if (i == 9) /* ÍË¸ñ(<) */
+        if (i == 9) /* é€€æ ¼(<) */
         {
             s_btns[i].bg_color     = COLOR_YELLOW;
             s_btns[i].press_color  = COLOR_ORANGE;
             s_btns[i].text_color   = COLOR_BLACK;
             s_btns[i].border_color = COLOR_WHITE;
         }
-        else if (i == 11) /* ÖØÊä */
+        else if (i == 11) /* é‡è¾“ */
         {
             s_btns[i].bg_color     = COLOR_ORANGE;
             s_btns[i].press_color  = COLOR_YELLOW;
             s_btns[i].text_color   = COLOR_BLACK;
             s_btns[i].border_color = COLOR_WHITE;
         }
-        else if (i == 12) /* È·ÈÏ (spans 3 columns) */
+        else if (i == 12) /* ç¡®è®¤ (spans 3 columns) */
         {
             s_btns[i].x            = KP_BTN_X0;
             s_btns[i].w            = (uint16_t)(3 * KP_BTN_W + 2 * KP_BTN_GAP_X);
@@ -112,7 +112,7 @@ static void Kp_SetupBtns(void)
             s_btns[i].text_color   = COLOR_BLACK;
             s_btns[i].border_color = COLOR_WHITE;
         }
-        else /* Êı×Ö */
+        else /* æ•°å­— */
         {
             s_btns[i].bg_color     = COLOR_BLUE;
             s_btns[i].press_color  = COLOR_CYAN;
@@ -123,7 +123,7 @@ static void Kp_SetupBtns(void)
     }
 }
 
-/* ±êÌâÀ¸ÖĞµÄÈ¡Ïû°´Å¥(ÓÒÉÏ½Ç)¡£ */
+/* æ ‡é¢˜æ ä¸­çš„å–æ¶ˆæŒ‰é’®(å³ä¸Šè§’)ã€‚ */
 static Button_t s_cancel_btn;
 
 void Keypad_Begin(const char *title, const char *prompt)
@@ -142,16 +142,16 @@ void Keypad_Begin(const char *title, const char *prompt)
 
     LCD_Clear(COLOR_BLACK);
 
-    /* ±êÌâÀ¸ */
+    /* æ ‡é¢˜æ  */
     LCD_Fill(0, 0, LCD_W - 1, KP_TITLE_H - 1, 0x3186);
     LCD_ShowStringCN(8, 4, s_title, COLOR_WHITE, 0x3186, 1);
 
-    /* È¡Ïû°´Å¥(±êÌâÀ¸ÓÒÉÏ½Ç) */
+    /* å–æ¶ˆæŒ‰é’®(æ ‡é¢˜æ å³ä¸Šè§’) */
     s_cancel_btn.x = (uint16_t)(LCD_W - 100);
     s_cancel_btn.y = 4;
     s_cancel_btn.w = 92;
     s_cancel_btn.h = 24;
-    s_cancel_btn.label = "È¡Ïû";
+    s_cancel_btn.label = "\xC8\xA1\xCF\xFB";
     s_cancel_btn.bg_color = COLOR_RED;
     s_cancel_btn.press_color = COLOR_YELLOW;
     s_cancel_btn.text_color = COLOR_WHITE;
@@ -159,13 +159,13 @@ void Keypad_Begin(const char *title, const char *prompt)
     s_cancel_btn.state = 0;
     Button_Draw(&s_cancel_btn);
 
-    /* ÌáÊ¾ */
+    /* æç¤º */
     LCD_ShowStringCN(8, KP_TITLE_H + 2, s_prompt, COLOR_CYAN, COLOR_BLACK, 1);
 
-    /* ÊäÈë¸ñ */
+    /* è¾“å…¥æ ¼ */
     Kp_DrawCells();
 
-    /* ¼üÅÌ°´¼ü */
+    /* é”®ç›˜æŒ‰é”® */
     for (i = 0; i < KP_N_BTNS; i++)
         Button_Draw(&s_btns[i]);
 }
@@ -174,7 +174,7 @@ KpResult Keypad_Scan(uint8_t touch_down, uint16_t tx, uint16_t ty, char out[KP_D
 {
     uint8_t i;
 
-    /* È¡Ïû¼üÓÅÏÈ */
+    /* å–æ¶ˆé”®ä¼˜å…ˆ */
     if (Button_Scan(&s_cancel_btn, touch_down, tx, ty))
         return KP_CANCEL;
 
@@ -182,7 +182,7 @@ KpResult Keypad_Scan(uint8_t touch_down, uint16_t tx, uint16_t ty, char out[KP_D
     {
         if (Button_Scan(&s_btns[i], touch_down, tx, ty))
         {
-            if (i == 12)   /* È·ÈÏ */
+            if (i == 12)   /* ç¡®è®¤ */
             {
                 if (s_count == KP_DIGITS)
                 {
@@ -190,16 +190,16 @@ KpResult Keypad_Scan(uint8_t touch_down, uint16_t tx, uint16_t ty, char out[KP_D
                     out[KP_DIGITS] = 0;
                     return KP_DONE;
                 }
-                /* Î»Êı²»×ã: ÉÁË¸¿Õ¸ñ */
+                /* ä½æ•°ä¸è¶³: é—ªçƒç©ºæ ¼ */
                 Kp_DrawCells();
             }
-            else if (i == 11)   /* ÖØÊä */
+            else if (i == 11)   /* é‡è¾“ */
             {
                 s_count = 0;
                 memset(s_digits, 0, sizeof(s_digits));
                 Kp_DrawCells();
             }
-            else if (i == 9)   /* ÍË¸ñ(<) */
+            else if (i == 9)   /* é€€æ ¼(<) */
             {
                 if (s_count > 0)
                 {
@@ -208,7 +208,7 @@ KpResult Keypad_Scan(uint8_t touch_down, uint16_t tx, uint16_t ty, char out[KP_D
                     Kp_DrawCells();
                 }
             }
-            else   /* Êı×Ö0..9 */
+            else   /* æ•°å­—0..9 */
             {
                 char d;
                 if (i == 10)      d = '0';
@@ -231,7 +231,7 @@ uint8_t Keypad_Count(void)
     return s_count;
 }
 
-/* ´ÓÍâ²¿À´Ô´(ÈçÓïÒôÊ¶±ğ)×¢ÈëÒ»Î»Êı×Ö¡£ */
+/* ä»å¤–éƒ¨æ¥æº(å¦‚è¯­éŸ³è¯†åˆ«)æ³¨å…¥ä¸€ä½æ•°å­—ã€‚ */
 uint8_t Keypad_InjectDigit(char d)
 {
     if (s_count >= KP_DIGITS) return 0;
@@ -241,7 +241,7 @@ uint8_t Keypad_InjectDigit(char d)
     return 1;
 }
 
-/* Çå³ıËùÓĞÒÑÊäÈëÊı×Ö¡£ */
+/* æ¸…é™¤æ‰€æœ‰å·²è¾“å…¥æ•°å­—ã€‚ */
 void Keypad_ClearAll(void)
 {
     s_count = 0;
@@ -249,13 +249,13 @@ void Keypad_ClearAll(void)
     Kp_DrawCells();
 }
 
-/* 6Î»Êı×ÖÒÑÊäÈëÂú·µ»Ø1¡£ */
+/* 6ä½æ•°å­—å·²è¾“å…¥æ»¡è¿”å›1ã€‚ */
 uint8_t Keypad_IsFull(void)
 {
     return (s_count >= KP_DIGITS) ? 1 : 0;
 }
 
-/* ½«µ±Ç°»º³åÇø¸´ÖÆµ½out[7]; ·µ»ØÎ»Êı¡£ */
+/* å°†å½“å‰ç¼“å†²åŒºå¤åˆ¶åˆ°out[7]; è¿”å›ä½æ•°ã€‚ */
 uint8_t Keypad_GetCode(char out[KP_DIGITS + 1])
 {
     if (out)

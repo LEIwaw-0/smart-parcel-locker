@@ -44,18 +44,18 @@ static const char *const MON3[12] = {
 /* ---- UTF-8 -> GBK for the handful of weather words we display ---- */
 typedef struct { uint16_t u; uint16_t g; } u2g_t;
 static const u2g_t U2G[] = {
-    { 0x4E1C, 0xB6AB },  /* ∂´ */
-    { 0x5357, 0xC4CF },  /* ƒœ */
-    { 0x897F, 0xCEF7 },  /* Œ˜ */
-    { 0x5317, 0xB1B1 },  /* ±± */
-    { 0x98CE, 0xB7E7 },  /* ∑Á */
-    { 0x7EA7, 0xBCB6 },  /* º∂ */
-    { 0x5FAE, 0xCEA2 },  /* Œ¢ */
-    { 0x65E0, 0xCEDE },  /* Œﬁ */
-    { 0x6301, 0xB3D6 },  /* ≥÷ */
-    { 0x7EED, 0xD0F8 },  /* –¯ */
-    { 0x8F6C, 0xD7AA },  /* ◊™ */
-    { 0x5411, 0xCFF2 }   /* œÚ */
+    { 0x4E1C, 0xB6AB },  /* ‰∏ú */
+    { 0x5357, 0xC4CF },  /* Âçó */
+    { 0x897F, 0xCEF7 },  /* Ë•ø */
+    { 0x5317, 0xB1B1 },  /* Âåó */
+    { 0x98CE, 0xB7E7 },  /* È£é */
+    { 0x7EA7, 0xBCB6 },  /* Á∫ß */
+    { 0x5FAE, 0xCEA2 },  /* ÂæÆ */
+    { 0x65E0, 0xCEDE },  /* Êó† */
+    { 0x6301, 0xB3D6 },  /* ÊåÅ */
+    { 0x7EED, 0xD0F8 },  /* Áª≠ */
+    { 0x8F6C, 0xD7AA },  /* ËΩ¨ */
+    { 0x5411, 0xCFF2 }   /* Âêë */
 };
 
 static int32_t DaysFromCivil(int32_t y, int32_t m, int32_t d)
@@ -236,7 +236,7 @@ static void Clock_DrawTime(void)
 
 void Clock_DrawCard(void)
 {
-    static const char *const WD[7] = { "»’", "“ª", "∂˛", "»˝", "Àƒ", "ŒÂ", "¡˘" };
+    static const char *const WD[7] = { "\xC8\xD5", "\xD2\xBB", "\xB6\xFE", "\xC8\xFD", "\xCB\xC4", "\xCE\xE5", "\xC1\xF9" };
     char buf[24];
 
     LCD_FillRound(CLK_X1, CLK_Y1, CLK_X2, CLK_Y2, 12, UI_CARD_BG);
@@ -244,8 +244,8 @@ void Clock_DrawCard(void)
 
     if (!s_clk_valid)
     {
-        LCD_ShowStringCN(43, 74, " ±º‰Õ¨≤Ω÷–", COLOR_DIM, UI_CARD_BG, 2);
-        LCD_ShowStringCN(83, 128, "«Îµ»¥˝¡™Õ¯", COLOR_DIM, UI_CARD_BG, 1);
+        LCD_ShowStringCN(43, 74, "\xCA\xB1\xBC\xE4\xCD\xAC\xB2\xBD\xD6\xD0", COLOR_DIM, UI_CARD_BG, 2);
+        LCD_ShowStringCN(83, 128, "\xC7\xEB\xB5\xC8\xB4\xFD\xC1\xAA\xCD\xF8", COLOR_DIM, UI_CARD_BG, 1);
         return;
     }
 
@@ -255,10 +255,10 @@ void Clock_DrawCard(void)
     sprintf(buf, "%04d-%02d-%02d", (int)s_clk_year, (int)s_clk_mon, (int)s_clk_day);
     LCD_ShowString(63, 112, buf, COLOR_TEXT, UI_CARD_BG, 2);
 
-    sprintf(buf, "–«∆⁄%s", WD[s_clk_wday % 7]);
+    sprintf(buf, "\xD0\xC7\xC6\xDA%s", WD[s_clk_wday % 7]);
     LCD_ShowStringCN(99, 140, buf, COLOR_DIM, UI_CARD_BG, 1);
 
-    LCD_ShowStringCN(83, 164, "±±æ© ±º‰", COLOR_DIM, UI_CARD_BG, 1);
+    LCD_ShowStringCN(83, 164, "\xB1\xB1\xBE\xA9\xCA\xB1\xBC\xE4", COLOR_DIM, UI_CARD_BG, 1);
 }
 
 void Wx_DrawCard(void)
@@ -268,21 +268,21 @@ void Wx_DrawCard(void)
 
     LCD_FillRound(WX_X1, WX_Y1, WX_X2, WX_Y2, 12, UI_CARD_BG);
     LCD_DrawRoundRect(WX_X1, WX_Y1, WX_X2, WX_Y2, 12, UI_CARD_LINE);
-    LCD_ShowStringCN(266, 52, "€Ø∂º  µ ±", COLOR_DIM, UI_CARD_BG, 1);
+    LCD_ShowStringCN(266, 52, "\xDB\xAF\xB6\xBC \xCA\xB5\xCA\xB1", COLOR_DIM, UI_CARD_BG, 1);
 
 
     if (!s_wx_valid)
     {
-        LCD_ShowStringCN(275, 92, "ÃÏ∆¯ªÒ»°÷–", COLOR_DIM, UI_CARD_BG, 2);
-        LCD_ShowStringCN(300, 138, "«Îµ»¥˝¡™Õ¯", COLOR_DIM, UI_CARD_BG, 1);
+        LCD_ShowStringCN(275, 92, "\xCC\xEC\xC6\xF8\xBB\xF1\xC8\xA1\xD6\xD0", COLOR_DIM, UI_CARD_BG, 2);
+        LCD_ShowStringCN(300, 138, "\xC7\xEB\xB5\xC8\xB4\xFD\xC1\xAA\xCD\xF8", COLOR_DIM, UI_CARD_BG, 1);
         return;
     }
 
     LCD_ShowStringBig(268, 78, s_wx_temp, 0xFD20, UI_CARD_BG, 4);
     tx = (uint16_t)(268 + (uint16_t)strlen(s_wx_temp) * 24u + 4u);
-    LCD_ShowStringCN(tx, 78, "°Ê", 0xFD20, UI_CARD_BG, 2);
+    LCD_ShowStringCN(tx, 78, "\xA1\xE6", 0xFD20, UI_CARD_BG, 2);
 
-    sprintf(buf, " ™∂» %s", s_wx_humi);
+    sprintf(buf, "\xCA\xAA\xB6\xC8 %s", s_wx_humi);
     LCD_ShowStringCN(266, 132, buf, COLOR_TEXT, UI_CARD_BG, 1);
 
     sprintf(buf, "%s %s", s_wx_wind, s_wx_wlev);

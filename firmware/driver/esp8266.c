@@ -69,7 +69,7 @@ static volatile uint8_t s_line_pos = 0;
  * 导致模块快速的"OK"回复被静默丢�?ORE溢出错误)�? * 进而使握手死锁�?收到回显但永远等不到OK"的状态�? * ISR只入队，由Tick()出队打印�?*/
 #define DBG_QLEN 4
 
-/* ================= ���ʽ HTTP GET (borrowed-link fetch) ================= */
+/* ================= ���ʽ HTTP GET (borrowed-link fetch) ================= */
 #define ESP_FETCH_RX_LEN     1024u
 #define ESP_FETCH_HOST_LEN     64u
 #define ESP_FETCH_PATH_LEN     96u
@@ -942,7 +942,7 @@ uint8_t ESP8266_GetResponse(char *out, uint8_t maxlen)
 }
 
 /* ============================================================
- *  ���ʽ HTTP GET �����ӿ�
+ *  ���ʽ HTTP GET �����ӿ�
  * ============================================================ */
 uint8_t ESP8266_FetchBusy(void)
 {

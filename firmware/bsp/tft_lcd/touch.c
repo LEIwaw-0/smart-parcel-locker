@@ -1,30 +1,30 @@
 /******************************************************
-**  XPT2046 µç×è´¥ÃşÇı¶¯ (Èí¼şSPI)
-**  Òı½Å: T_CS=PA0  T_IRQ=PA1  T_CLK=PE7  T_DIN=PE8  T_DO=PE9
-**  ÒÆÖ²×Ô³§¼Ò Demo_STM32F407ZGT6_Software_SPI/TOUCH/touch.c
-**  - ³§¼ÒSPIÊ±Ğò(·¢ÃüÁîºóµÈ6us×ª»», 16Î»¶ÁÈ¡È¡¸ß12Î»)
-**  - 5´Î²ÉÑùÅÅĞòÈ¥¼«ÖµÆ½¾ù + ¶ş´Î²ÉÑùÆ«²îÂË²¨
-**  - ºáÆÁ touchtype=1: ½»»»X/Y¶ÁÈ¡ÃüÁî(CMD_RDX=0x90, CMD_RDY=0xD0)
-**  - ÏßĞÔ±ä»»: ÆÁÄ»×ø±ê = fac * raw + off (ÕıÏµÊı)
-**  È¥µô³§¼Ò24CXX EEPROM´æ´¢, ²ÎÊıÓÃtouch.hºê
+**  XPT2046 ç”µé˜»è§¦æ‘¸é©±åŠ¨ (è½¯ä»¶SPI)
+**  å¼•è„š: T_CS=PA0  T_IRQ=PA1  T_CLK=PE7  T_DIN=PE8  T_DO=PE9
+**  ç§»æ¤è‡ªå‚å®¶ Demo_STM32F407ZGT6_Software_SPI/TOUCH/touch.c
+**  - å‚å®¶SPIæ—¶åº(å‘å‘½ä»¤åç­‰6usè½¬æ¢, 16ä½è¯»å–å–é«˜12ä½)
+**  - 5æ¬¡é‡‡æ ·æ’åºå»æå€¼å¹³å‡ + äºŒæ¬¡é‡‡æ ·åå·®æ»¤æ³¢
+**  - æ¨ªå± touchtype=1: äº¤æ¢X/Yè¯»å–å‘½ä»¤(CMD_RDX=0x90, CMD_RDY=0xD0)
+**  - çº¿æ€§å˜æ¢: å±å¹•åæ ‡ = fac * raw + off (æ­£ç³»æ•°)
+**  å»æ‰å‚å®¶24CXX EEPROMå­˜å‚¨, å‚æ•°ç”¨touch.hå®
 ******************************************************/
 #include "touch.h"
 #include "delay.h"
 
-/* ---------------- Òı½Å²Ù×÷ ---------------- */
+/* ---------------- å¼•è„šæ“ä½œ ---------------- */
 #define T_CS(x)    GPIO_WriteBit(GPIOA, GPIO_Pin_0, (BitAction)(x))
 #define T_IRQ()    GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_1)
 #define T_CLK(x)   GPIO_WriteBit(GPIOE, GPIO_Pin_7, (BitAction)(x))
 #define T_DIN(x)   GPIO_WriteBit(GPIOE, GPIO_Pin_8, (BitAction)(x))
 #define T_DO()     GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_9)
 
-/* ºáÆÁ touchtype=1: X/Y·½ÏòÓëÆÁÄ»Ïà·´, ½»»»ÃüÁî(³§¼ÒTP_Get_AdjdataÂß¼­) */
-#define CMD_RDX   0x90    /* ¶Á"ÆÁÄ»X"¶ÔÓ¦µÄADÍ¨µÀ */
-#define CMD_RDY   0xD0    /* ¶Á"ÆÁÄ»Y"¶ÔÓ¦µÄADÍ¨µÀ */
+/* æ¨ªå± touchtype=1: X/Yæ–¹å‘ä¸å±å¹•ç›¸å, äº¤æ¢å‘½ä»¤(å‚å®¶TP_Get_Adjdataé€»è¾‘) */
+#define CMD_RDX   0x90    /* è¯»"å±å¹•X"å¯¹åº”çš„ADé€šé“ */
+#define CMD_RDY   0xD0    /* è¯»"å±å¹•Y"å¯¹åº”çš„ADé€šé“ */
 
-#define READ_TIMES  5     /* ²ÉÑù´ÎÊı */
-#define LOST_VAL    1     /* ÅÅĞòºó¶ªÆúµÄ×î´ó/×îĞ¡Öµ¸öÊı */
-#define ERR_RANGE   50    /* ¶ş´Î²ÉÑùÔÊĞíÆ«²î */
+#define READ_TIMES  5     /* é‡‡æ ·æ¬¡æ•° */
+#define LOST_VAL    1     /* æ’åºåä¸¢å¼ƒçš„æœ€å¤§/æœ€å°å€¼ä¸ªæ•° */
+#define ERR_RANGE   50    /* äºŒæ¬¡é‡‡æ ·å…è®¸åå·® */
 
 void Touch_Init(void)
 {
@@ -32,7 +32,7 @@ void Touch_Init(void)
 
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOE, ENABLE);
 
-    /* PA0=T_CS ÍÆÍìÊä³ö */
+    /* PA0=T_CS æ¨æŒ½è¾“å‡º */
     g.GPIO_Pin   = GPIO_Pin_0;
     g.GPIO_Mode  = GPIO_Mode_OUT;
     g.GPIO_OType = GPIO_OType_PP;
@@ -41,13 +41,13 @@ void Touch_Init(void)
     GPIO_Init(GPIOA, &g);
     T_CS(1);
 
-    /* PA1=T_IRQ ÉÏÀ­ÊäÈë */
+    /* PA1=T_IRQ ä¸Šæ‹‰è¾“å…¥ */
     g.GPIO_Pin  = GPIO_Pin_1;
     g.GPIO_Mode = GPIO_Mode_IN;
     g.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_Init(GPIOA, &g);
 
-    /* PE7=T_CLK PE8=T_DIN ÍÆÍìÊä³ö */
+    /* PE7=T_CLK PE8=T_DIN æ¨æŒ½è¾“å‡º */
     g.GPIO_Pin   = GPIO_Pin_7 | GPIO_Pin_8;
     g.GPIO_Mode  = GPIO_Mode_OUT;
     g.GPIO_OType = GPIO_OType_PP;
@@ -57,14 +57,14 @@ void Touch_Init(void)
     T_CLK(0);
     T_DIN(0);
 
-    /* PE9=T_DO ÉÏÀ­ÊäÈë */
+    /* PE9=T_DO ä¸Šæ‹‰è¾“å…¥ */
     g.GPIO_Pin  = GPIO_Pin_9;
     g.GPIO_Mode = GPIO_Mode_IN;
     g.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_Init(GPIOE, &g);
 }
 
-/* Ïò´¥ÃşICĞ´Ò»¸ö×Ö½Ú (³§¼ÒTP_Write_Byte: Êı¾İÔÚTCLK=0ÉèÖÃ, ÉÏÉıÑØËø´æ) */
+/* å‘è§¦æ‘¸ICå†™ä¸€ä¸ªå­—èŠ‚ (å‚å®¶TP_Write_Byte: æ•°æ®åœ¨TCLK=0è®¾ç½®, ä¸Šå‡æ²¿é”å­˜) */
 static void TP_Write_Byte(uint8_t num)
 {
     uint8_t count;
@@ -74,11 +74,11 @@ static void TP_Write_Byte(uint8_t num)
         num <<= 1;
         T_CLK(0);
         delay_us(1);
-        T_CLK(1);      /* ÉÏÉıÑØÓĞĞ§ */
+        T_CLK(1);      /* ä¸Šå‡æ²¿æœ‰æ•ˆ */
     }
 }
 
-/* ¶ÁAD×ª»»Öµ (³§¼ÒTP_Read_AD: ¸ß12Î»ÓĞĞ§) */
+/* è¯»ADè½¬æ¢å€¼ (å‚å®¶TP_Read_AD: é«˜12ä½æœ‰æ•ˆ) */
 static uint16_t TP_Read_AD(uint8_t cmd)
 {
     uint8_t  count;
@@ -86,26 +86,26 @@ static uint16_t TP_Read_AD(uint8_t cmd)
 
     T_CLK(0);
     T_DIN(0);
-    T_CS(0);                       /* Ñ¡ÖĞ´¥ÃşIC */
-    TP_Write_Byte(cmd);            /* ·¢ÃüÁî×Ö */
-    delay_us(6);                   /* ADS7846×ª»»Ê±¼ä×î³¤6us */
+    T_CS(0);                       /* é€‰ä¸­è§¦æ‘¸IC */
+    TP_Write_Byte(cmd);            /* å‘å‘½ä»¤å­— */
+    delay_us(6);                   /* ADS7846è½¬æ¢æ—¶é—´æœ€é•¿6us */
     T_CLK(0); delay_us(1);
-    T_CLK(1); delay_us(1);         /* 1¸öÊ±ÖÓÇåBUSY */
+    T_CLK(1); delay_us(1);         /* 1ä¸ªæ—¶é’Ÿæ¸…BUSY */
     T_CLK(0);
 
-    for (count = 0; count < 16; count++)   /* ¶Á16Î», Ö»ÓĞ¸ß12Î»ÓĞĞ§ */
+    for (count = 0; count < 16; count++)   /* è¯»16ä½, åªæœ‰é«˜12ä½æœ‰æ•ˆ */
     {
         num <<= 1;
-        T_CLK(0); delay_us(1);    /* ÏÂ½µÑØÊı¾İÒÆ³ö */
+        T_CLK(0); delay_us(1);    /* ä¸‹é™æ²¿æ•°æ®ç§»å‡º */
         T_CLK(1);
         if (T_DO()) num++;
     }
-    num >>= 4;                     /* È¡¸ß12Î» */
-    T_CS(1);                       /* ÊÍ·ÅÆ¬Ñ¡ */
+    num >>= 4;                     /* å–é«˜12ä½ */
+    T_CS(1);                       /* é‡Šæ”¾ç‰‡é€‰ */
     return num;
 }
 
-/* ¶à´Î²ÉÑùÅÅĞòÈ¥¼«ÖµÆ½¾ù (³§¼ÒTP_Read_XOY) */
+/* å¤šæ¬¡é‡‡æ ·æ’åºå»æå€¼å¹³å‡ (å‚å®¶TP_Read_XOY) */
 static uint16_t TP_Read_XOY(uint8_t cmd)
 {
     uint16_t i, j;
@@ -114,7 +114,7 @@ static uint16_t TP_Read_XOY(uint8_t cmd)
 
     for (i = 0; i < READ_TIMES; i++) buf[i] = TP_Read_AD(cmd);
 
-    for (i = 0; i < READ_TIMES - 1; i++)      /* ÉıĞòÅÅĞò */
+    for (i = 0; i < READ_TIMES - 1; i++)      /* å‡åºæ’åº */
         for (j = i + 1; j < READ_TIMES; j++)
             if (buf[i] > buf[j]) { temp = buf[i]; buf[i] = buf[j]; buf[j] = temp; }
 
@@ -123,7 +123,7 @@ static uint16_t TP_Read_XOY(uint8_t cmd)
     return temp;
 }
 
-/* ¶ÁÒ»´ÎX/Y (³§¼ÒTP_Read_XY) */
+/* è¯»ä¸€æ¬¡X/Y (å‚å®¶TP_Read_XY) */
 static uint8_t TP_Read_XY(uint16_t *x, uint16_t *y)
 {
     *x = TP_Read_XOY(CMD_RDX);
@@ -131,7 +131,7 @@ static uint8_t TP_Read_XY(uint16_t *x, uint16_t *y)
     return 1;
 }
 
-/* Á¬Ğø¶ÁÁ½´Î, Æ«²î<ERR_RANGE²Å½ÓÊÜ (³§¼ÒTP_Read_XY2) */
+/* è¿ç»­è¯»ä¸¤æ¬¡, åå·®<ERR_RANGEæ‰æ¥å— (å‚å®¶TP_Read_XY2) */
 static uint8_t TP_Read_XY2(uint16_t *x, uint16_t *y)
 {
     uint16_t x1, y1, x2, y2;
@@ -149,20 +149,20 @@ static uint8_t TP_Read_XY2(uint16_t *x, uint16_t *y)
     return 0;
 }
 
-/* ¶ÁÔ­Ê¼ADÖµ(ÒÑ°´touchtype½»»»ÃüÁî), 1=³É¹¦ */
+/* è¯»åŸå§‹ADå€¼(å·²æŒ‰touchtypeäº¤æ¢å‘½ä»¤), 1=æˆåŠŸ */
 uint8_t Touch_ReadRaw(uint16_t *rx, uint16_t *ry)
 {
-    if (T_IRQ() != Bit_RESET) return 0;   /* ÎŞ´¥Ãş */
+    if (T_IRQ() != Bit_RESET) return 0;   /* æ— è§¦æ‘¸ */
     return TP_Read_XY2(rx, ry);
 }
 
-/* É¨Ãè: 1=°´ÏÂ, sx/sy=ÆÁÄ»×ø±ê(ÒÑÏßĞÔ±ä»»²¢ÏŞ·ù), rx/ry=Ô­Ê¼AD(¿É´«0) */
+/* æ‰«æ: 1=æŒ‰ä¸‹, sx/sy=å±å¹•åæ ‡(å·²çº¿æ€§å˜æ¢å¹¶é™å¹…), rx/ry=åŸå§‹AD(å¯ä¼ 0) */
 uint8_t Touch_Scan(uint16_t *sx, uint16_t *sy, uint16_t *rx, uint16_t *ry)
 {
     uint16_t rawx, rawy;
     int32_t  vx, vy;
 
-    if (T_IRQ() != Bit_RESET) return 0;   /* ÎŞ´¥Ãş */
+    if (T_IRQ() != Bit_RESET) return 0;   /* æ— è§¦æ‘¸ */
     if (!TP_Read_XY2(&rawx, &rawy)) return 0;
 
     if (rx) *rx = rawx;

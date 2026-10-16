@@ -5,23 +5,23 @@
 #include "lcd.h"
 
 /*
- * XPT2046 µç×è´¥ÃþÇý¶¯ (Èí¼þSPI)
- *   T_CS  = PA0 (ÍÆÍìÊä³ö)      T_IRQ = PA1 (ÉÏÀ­ÊäÈë, µÍµçÆ½=°´ÏÂ)
- *   T_CLK = PE7 (ÍÆÍìÊä³ö)      T_DIN = PE8 (ÍÆÍìÊä³ö)      T_DO = PE9 (ÉÏÀ­ÊäÈë)
+ * XPT2046 ç”µé˜»è§¦æ‘¸é©±åŠ¨ (è½¯ä»¶SPI)
+ *   T_CS  = PA0 (æŽ¨æŒ½è¾“å‡º)      T_IRQ = PA1 (ä¸Šæ‹‰è¾“å…¥, ä½Žç”µå¹³=æŒ‰ä¸‹)
+ *   T_CLK = PE7 (æŽ¨æŒ½è¾“å‡º)      T_DIN = PE8 (æŽ¨æŒ½è¾“å‡º)      T_DO = PE9 (ä¸Šæ‹‰è¾“å…¥)
  *
- * ºáÆÁ480x320: ²ÉÓÃ³§¼Ò touchtype=1 ·½°¸(½»»»X/Y¶ÁÈ¡ÃüÁî), ÏßÐÔ±ä»»ÓÃÕýÏµÊý
- *   ÆÁÄ»×ø±ê = fac * raw + off
- * ²ÎÊýÏÈÓÃµäÐÍ¹ÀËãÖµ, ¿É°´Êµ²âraw·¶Î§ÔÚºêÀïÎ¢µ÷
+ * æ¨ªå±480x320: é‡‡ç”¨åŽ‚å®¶ touchtype=1 æ–¹æ¡ˆ(äº¤æ¢X/Yè¯»å–å‘½ä»¤), çº¿æ€§å˜æ¢ç”¨æ­£ç³»æ•°
+ *   å±å¹•åæ ‡ = fac * raw + off
+ * å‚æ•°å…ˆç”¨å…¸åž‹ä¼°ç®—å€¼, å¯æŒ‰å®žæµ‹rawèŒƒå›´åœ¨å®é‡Œå¾®è°ƒ
  */
 
-/* ´¥ÃþÐ£×¼ÏßÐÔ²ÎÊý (ºáÆÁ touchtype=1, ÕýÏµÊý) */
+/* è§¦æ‘¸æ ¡å‡†çº¿æ€§å‚æ•° (æ¨ªå± touchtype=1, æ­£ç³»æ•°) */
 #define TOUCH_XFAC    (-0.1311f)
 #define TOUCH_YFAC    (-0.0836f)
 #define TOUCH_XOFF    513
 #define TOUCH_YOFF    335
 
-void    Touch_Init(void);                                   /* ³õÊ¼»¯´¥ÃþGPIO */
-uint8_t Touch_Scan(uint16_t *sx, uint16_t *sy, uint16_t *rx, uint16_t *ry); /* É¨Ãè, 1=°´ÏÂ, sx/sy=ÆÁÄ»×ø±ê, rx/ry=Ô­Ê¼AD(¿É´«0) */
-uint8_t Touch_ReadRaw(uint16_t *rx, uint16_t *ry);         /* ¶ÁÔ­Ê¼ADÖµ(ÒÑ°´touchtype½»»»), 1=³É¹¦ */
+void    Touch_Init(void);                                   /* åˆå§‹åŒ–è§¦æ‘¸GPIO */
+uint8_t Touch_Scan(uint16_t *sx, uint16_t *sy, uint16_t *rx, uint16_t *ry); /* æ‰«æ, 1=æŒ‰ä¸‹, sx/sy=å±å¹•åæ ‡, rx/ry=åŽŸå§‹AD(å¯ä¼ 0) */
+uint8_t Touch_ReadRaw(uint16_t *rx, uint16_t *ry);         /* è¯»åŽŸå§‹ADå€¼(å·²æŒ‰touchtypeäº¤æ¢), 1=æˆåŠŸ */
 
 #endif

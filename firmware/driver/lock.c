@@ -1,11 +1,11 @@
 /**
   ******************************************************************************
   * @file    lock.c
-  * @brief   ¿ìµÝ¹ñ4Â·µç´ÅËø¿ØÖÆ
-  *          ºó¶Ë1(Ä¬ÈÏ): STM32 GPIOÖ±Çý¼ÌµçÆ÷IN (PB8/PB9/PB12/PB13)
-  *                       ¸´¿Ì relay ¹¤³ÌÒÑÑéÖ¤µÄÍÆÍì+µÍµçÆ½´¥·¢½Ó·¨
-  *          ºó¶Ë2(¿ÉÑ¡): PCF8574 P0~P3Êä³ö (LOCK_BACKEND_GPIO=0, Ðè×ãÁ¿5V)
-  *          Ëø·´À¡: Á½ÖÖºó¶Ë¾ù¾­ PCF8574 P4~P7 ¶ÁÈ¡
+  * @brief   å¿«é€’æŸœ4è·¯ç”µç£é”æŽ§åˆ¶
+  *          åŽç«¯1(é»˜è®¤): STM32 GPIOç›´é©±ç»§ç”µå™¨IN (PB8/PB9/PB12/PB13)
+  *                       å¤åˆ» relay å·¥ç¨‹å·²éªŒè¯çš„æŽ¨æŒ½+ä½Žç”µå¹³è§¦å‘æŽ¥æ³•
+  *          åŽç«¯2(å¯é€‰): PCF8574 P0~P3è¾“å‡º (LOCK_BACKEND_GPIO=0, éœ€è¶³é‡5V)
+  *          é”åé¦ˆ: ä¸¤ç§åŽç«¯å‡ç» PCF8574 P4~P7 è¯»å–
   ******************************************************************************
   */
 #include "lock.h"
@@ -13,16 +13,16 @@
 #include "delay.h"
 #include <stdio.h>
 
-/* ÏòÓ²¼þÐ´Êä³öÊ§°ÜÊ±µÄÖØÊÔ´ÎÊý(½öPCFºó¶ËÐèÒª) */
+/* å‘ç¡¬ä»¶å†™è¾“å‡ºå¤±è´¥æ—¶çš„é‡è¯•æ¬¡æ•°(ä»…PCFåŽç«¯éœ€è¦) */
 #define LOCK_I2C_RETRY        3u
 
-/* µ±Ç°P0~P3Êä³öÓ°×Ó: bit0~bit3¶ÔÓ¦Ëø1~4, 1=¸ÃÂ·ÇëÇóÍ¨µç */
+/* å½“å‰P0~P3è¾“å‡ºå½±å­: bit0~bit3å¯¹åº”é”1~4, 1=è¯¥è·¯è¯·æ±‚é€šç”µ */
 static uint8_t  lock_out_bits   = 0;
-/* ¸÷Ëø¿ªÊ¼Í¨µçµÄCYCCNTÖÜÆÚÊý, 0=Î´Í¨µç */
+/* å„é”å¼€å§‹é€šç”µçš„CYCCNTå‘¨æœŸæ•°, 0=æœªé€šç”µ */
 static uint32_t lock_open_cyc[LOCK_COUNT] = {0, 0, 0, 0};
 
 #if LOCK_BACKEND_GPIO
-/* 4Â·Ëø¶ÔÓ¦Òý½Å±í: Ëø1->PB8 Ëø2->PB9 Ëø3->PB12 Ëø4->PB13 */
+/* 4è·¯é”å¯¹åº”å¼•è„šè¡¨: é”1->PB8 é”2->PB9 é”3->PB12 é”4->PB13 */
 static const uint16_t lock_pin[LOCK_COUNT] = {LOCK1_PIN, LOCK2_PIN, LOCK3_PIN, LOCK4_PIN};
 #endif
 
@@ -33,26 +33,26 @@ static void Lock_DWT_Init(void)
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }
 
-/* PCFºó¶Ë: Ó°×Ó×Ö½Ú°´´¥·¢µçÆ½ºê×ª»» */
+/* PCFåŽç«¯: å½±å­å­—èŠ‚æŒ‰è§¦å‘ç”µå¹³å®è½¬æ¢ */
 #if !LOCK_BACKEND_GPIO
 static uint8_t Lock_OutputByte(void)
 {
 #if LOCK_ACTIVE_LOW
-    /* µÍµçÆ½´¥·¢: ÇëÇóÍ¨µçµÄÎ»Êä³ö0, ÆäÓàÊä³ö1(Èõ¸ß, ¹âñî²»µ¼Í¨) */
+    /* ä½Žç”µå¹³è§¦å‘: è¯·æ±‚é€šç”µçš„ä½è¾“å‡º0, å…¶ä½™è¾“å‡º1(å¼±é«˜, å…‰è€¦ä¸å¯¼é€š) */
     return (uint8_t)(0xF0 | ((~lock_out_bits) & 0x0F));
 #else
-    /* ¸ßµçÆ½´¥·¢: ÇëÇóÍ¨µçµÄÎ»Êä³ö1, ÆäÓàÊä³ö0; ¸ß4Î»ºã1±£³ÖP4~P7ÊäÈë */
+    /* é«˜ç”µå¹³è§¦å‘: è¯·æ±‚é€šç”µçš„ä½è¾“å‡º1, å…¶ä½™è¾“å‡º0; é«˜4ä½æ’1ä¿æŒP4~P7è¾“å…¥ */
     return (uint8_t)(0xF0 | lock_out_bits);
 #endif
 }
 #endif
 
-/* °ÑÊä³öÓ°×ÓÐ´µ½Ó²¼þ, ³É¹¦·µ»Ø0, Ê§°Ü·µ»Ø1 */
+/* æŠŠè¾“å‡ºå½±å­å†™åˆ°ç¡¬ä»¶, æˆåŠŸè¿”å›ž0, å¤±è´¥è¿”å›ž1 */
 static uint8_t Lock_Flush(void)
 {
 #if LOCK_BACKEND_GPIO
     uint8_t i;
-    /* µÍµçÆ½´¥·¢(ÌøÏßÃ±L): Í¨µç=Êä³öµÍ(ResetBits), ¶Ïµç=Êä³ö¸ß(SetBits) */
+    /* ä½Žç”µå¹³è§¦å‘(è·³çº¿å¸½L): é€šç”µ=è¾“å‡ºä½Ž(ResetBits), æ–­ç”µ=è¾“å‡ºé«˜(SetBits) */
     for (i = 0; i < LOCK_COUNT; i++)
     {
         uint8_t on = (lock_out_bits & (1u << i)) ? 1 : 0;
@@ -61,7 +61,7 @@ static uint8_t Lock_Flush(void)
         else
             GPIO_SetBits(LOCK_GPIO_PORT, lock_pin[i]);
     }
-    return 0;   /* ±¾µØGPIOÐ´²»»áÊ§°Ü */
+    return 0;   /* æœ¬åœ°GPIOå†™ä¸ä¼šå¤±è´¥ */
 #else
     uint8_t data = Lock_OutputByte();
     uint8_t retry;
@@ -90,27 +90,27 @@ void Lock_Init(void)
         uint8_t i;
         RCC_AHB1PeriphClockCmd(LOCK_GPIO_CLK, ENABLE);
 
-        /* ÏÈ°Ñ4¸ö½ÅÖÃÎª°²È«µçÆ½(µÍµçÆ½´¥·¢=¸ß=ÊÍ·Å), ÔÙÅä³ÉÊä³ö,
-         * ±ÜÃâÅäÖÃÇÐ»»Ë²¼ä¼ÌµçÆ÷ÎóÎüºÏ (Óërelay¹¤³ÌÒ»ÖÂ) */
+        /* å…ˆæŠŠ4ä¸ªè„šç½®ä¸ºå®‰å…¨ç”µå¹³(ä½Žç”µå¹³è§¦å‘=é«˜=é‡Šæ”¾), å†é…æˆè¾“å‡º,
+         * é¿å…é…ç½®åˆ‡æ¢çž¬é—´ç»§ç”µå™¨è¯¯å¸åˆ (ä¸Žrelayå·¥ç¨‹ä¸€è‡´) */
         GPIO_SetBits(LOCK_GPIO_PORT, LOCK_ALL_PINS);
 
         GPIO_InitStructure.GPIO_Pin   = LOCK_ALL_PINS;
         GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;
-        GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;   /* ÍÆÍì, ¸´¿Ìrelay¹¤³Ì */
+        GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;   /* æŽ¨æŒ½, å¤åˆ»relayå·¥ç¨‹ */
         GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
         GPIO_InitStructure.GPIO_Speed = GPIO_Low_Speed;
         GPIO_Init(LOCK_GPIO_PORT, &GPIO_InitStructure);
 
         for (i = 0; i < LOCK_COUNT; i++)
-            GPIO_SetBits(LOCK_GPIO_PORT, lock_pin[i]);   /* È«²¿ÊÍ·Å */
+            GPIO_SetBits(LOCK_GPIO_PORT, lock_pin[i]);   /* å…¨éƒ¨é‡Šæ”¾ */
     }
-    printf("¡¾Ëø¿Ø¡¿³õÊ¼»¯Íê³É(GPIOÖ±Çý PB8/PB9/PB12/PB13), È«²¿¼ÌµçÆ÷¶Ïµç\r\n");
+    printf("\xA1\xBE\xCB\xF8\xBF\xD8\xA1\xBF\xB3\xF5\xCA\xBC\xBB\xAF\xCD\xEA\xB3\xC9(GPIO\xD6\xB1\xC7\xFD PB8/PB9/PB12/PB13), \xC8\xAB\xB2\xBF\xBC\xCC\xB5\xE7\xC6\xF7\xB6\xCF\xB5\xE7\r\n");
 #else
     err = Lock_Flush();
-    printf("¡¾Ëø¿Ø¡¿³õÊ¼»¯Íê³É, È«²¿¼ÌµçÆ÷¶Ïµç, Ð´PCF8574=0x%02X, %s, ´¥·¢·½Ê½=%s\r\n",
+    printf("\xA1\xBE\xCB\xF8\xBF\xD8\xA1\xBF\xB3\xF5\xCA\xBC\xBB\xAF\xCD\xEA\xB3\xC9, \xC8\xAB\xB2\xBF\xBC\xCC\xB5\xE7\xC6\xF7\xB6\xCF\xB5\xE7, \xD0\xB4PCF8574=0x%02X, %s, \xB4\xA5\xB7\xA2\xB7\xBD\xCA\xBD=%s\r\n",
            Lock_OutputByte(),
-           err ? "Ê§°Ü!!!" : "³É¹¦",
-           LOCK_ACTIVE_LOW ? "µÍµçÆ½ÓÐÐ§(¼ÌµçÆ÷°åÌøÏßÃ±ÔÚL)" : "¸ßµçÆ½ÓÐÐ§");
+           err ? "\xCA\xA7\xB0\xDC!!!" : "\xB3\xC9\xB9\xA6",
+           LOCK_ACTIVE_LOW ? "\xB5\xCD\xB5\xE7\xC6\xBD\xD3\xD0\xD0\xA7(\xBC\xCC\xB5\xE7\xC6\xF7\xB0\xE5\xCC\xF8\xCF\xDF\xC3\xB1\xD4\xDAL)" : "\xB8\xDF\xB5\xE7\xC6\xBD\xD3\xD0\xD0\xA7");
 #endif
 
 #if !LOCK_BACKEND_GPIO
@@ -129,14 +129,14 @@ void Lock_Open(uint8_t id)
 #endif
     if (id < 1 || id > LOCK_COUNT) return;
 
-    /* »¥³â: Ö»±£ÁôÄ¿±êËøÍ¨µç */
+    /* äº’æ–¥: åªä¿ç•™ç›®æ ‡é”é€šç”µ */
     lock_out_bits = (uint8_t)(1u << (id - 1));
     for (i = 0; i < LOCK_COUNT; i++)
     {
         if (i == (id - 1))
         {
-            /* °²È«: Í¬Ò»°ÑËøÍ¨µçÆÚ¼äÖØ¸´´¥·¢²»ÖØÖÃ¼ÆÊ±, ±£Ö¤µ¥´ÎÍ¨µç¾ø²»³¬¹ý
-             * LOCK_ON_TIME_MS(<3ÃëÓ²Ô¼Êø), ·ÀÖ¹¿ìËÙÁ¬µãµ¼ÖÂÏßÈ¦³ÖÐøÍ¨µç¹ýÈÈ */
+            /* å®‰å…¨: åŒä¸€æŠŠé”é€šç”µæœŸé—´é‡å¤è§¦å‘ä¸é‡ç½®è®¡æ—¶, ä¿è¯å•æ¬¡é€šç”µç»ä¸è¶…è¿‡
+             * LOCK_ON_TIME_MS(<3ç§’ç¡¬çº¦æŸ), é˜²æ­¢å¿«é€Ÿè¿žç‚¹å¯¼è‡´çº¿åœˆæŒç»­é€šç”µè¿‡çƒ­ */
             if (lock_open_cyc[i] == 0) lock_open_cyc[i] = DWT->CYCCNT;
         }
         else
@@ -164,11 +164,11 @@ void Lock_Open(uint8_t id)
     }
 #endif
 #if LOCK_BACKEND_GPIO
-    printf("¡¾¿ªËø¡¿BOX%d ¼ÌµçÆ÷Í¨µç(»¥³â), Êä³öÑÚÂë=0x%X, GPIOÇý¶¯³É¹¦\r\n",
+    printf("\xA1\xBE\xBF\xAA\xCB\xF8\xA1\xBF" "BOX%d \xBC\xCC\xB5\xE7\xC6\xF7\xCD\xA8\xB5\xE7(\xBB\xA5\xB3\xE2), \xCA\xE4\xB3\xF6\xD1\xDA\xC2\xEB=0x%X, GPIO\xC7\xFD\xB6\xAF\xB3\xC9\xB9\xA6\r\n",
            id, lock_out_bits);
 #else
-    printf("¡¾¿ªËø¡¿BOX%d ¼ÌµçÆ÷Í¨µç(»¥³â), Ð´Èë×Ö½Ú=0x%02X, I2C·¢ËÍ%s\r\n",
-           id, Lock_OutputByte(), err ? "Ê§°Ü(ÒÑÖØÊÔ3´Î)!!!" : "³É¹¦");
+    printf("\xA1\xBE\xBF\xAA\xCB\xF8\xA1\xBF" "BOX%d \xBC\xCC\xB5\xE7\xC6\xF7\xCD\xA8\xB5\xE7(\xBB\xA5\xB3\xE2), \xD0\xB4\xC8\xEB\xD7\xD6\xBD\xDA=0x%02X, I2C\xB7\xA2\xCB\xCD%s\r\n",
+           id, Lock_OutputByte(), err ? "\xCA\xA7\xB0\xDC(\xD2\xD1\xD6\xD8\xCA\xD4" "3\xB4\xCE)!!!" : "\xB3\xC9\xB9\xA6");
 #endif
 }
 
@@ -186,11 +186,11 @@ void Lock_Close(uint8_t id)
     Lock_Flush();
 #endif
 #if LOCK_BACKEND_GPIO
-    printf("¡¾¹ØËø¡¿BOX%d ¼ÌµçÆ÷¶Ïµç, Êä³öÑÚÂë=0x%X, GPIOÇý¶¯³É¹¦\r\n",
+    printf("\xA1\xBE\xB9\xD8\xCB\xF8\xA1\xBF" "BOX%d \xBC\xCC\xB5\xE7\xC6\xF7\xB6\xCF\xB5\xE7, \xCA\xE4\xB3\xF6\xD1\xDA\xC2\xEB=0x%X, GPIO\xC7\xFD\xB6\xAF\xB3\xC9\xB9\xA6\r\n",
            id, lock_out_bits);
 #else
-    printf("¡¾¹ØËø¡¿BOX%d ¼ÌµçÆ÷¶Ïµç, Ð´Èë×Ö½Ú=0x%02X, I2C·¢ËÍ%s\r\n",
-           id, Lock_OutputByte(), err ? "Ê§°Ü(ÒÑÖØÊÔ3´Î)!!!" : "³É¹¦");
+    printf("\xA1\xBE\xB9\xD8\xCB\xF8\xA1\xBF" "BOX%d \xBC\xCC\xB5\xE7\xC6\xF7\xB6\xCF\xB5\xE7, \xD0\xB4\xC8\xEB\xD7\xD6\xBD\xDA=0x%02X, I2C\xB7\xA2\xCB\xCD%s\r\n",
+           id, Lock_OutputByte(), err ? "\xCA\xA7\xB0\xDC(\xD2\xD1\xD6\xD8\xCA\xD4" "3\xB4\xCE)!!!" : "\xB3\xC9\xB9\xA6");
 #endif
 }
 
@@ -203,7 +203,7 @@ uint8_t Lock_Tick(void)
     {
         if (lock_open_cyc[i] != 0)
         {
-            /* uint32ÖÜÆÚÊý²îÖµÔÚCYCCNT»ØÈÆÊ±ÈÔÕýÈ·(Ä£2^32), 2.5Ãë=4.2ÒÚÖÜÆÚ */
+            /* uint32å‘¨æœŸæ•°å·®å€¼åœ¨CYCCNTå›žç»•æ—¶ä»æ­£ç¡®(æ¨¡2^32), 2.5ç§’=4.2äº¿å‘¨æœŸ */
             uint32_t elapsed_cyc = DWT->CYCCNT - lock_open_cyc[i];
             uint32_t limit_cyc   = (uint32_t)LOCK_ON_TIME_MS * (SystemCoreClock / 1000u);
             if (elapsed_cyc >= limit_cyc)
@@ -223,11 +223,11 @@ uint8_t Lock_Tick(void)
             if (closed_mask & (1u << i))
             {
 #if LOCK_BACKEND_GPIO
-                printf("¡¾³¬Ê±±£»¤¡¿BOX%d Í¨µçÂú%dms×Ô¶¯¶Ïµç, GPIOÇý¶¯³É¹¦\r\n",
+                printf("\xA1\xBE\xB3\xAC\xCA\xB1\xB1\xA3\xBB\xA4\xA1\xBF" "BOX%d \xCD\xA8\xB5\xE7\xC2\xFA%dms\xD7\xD4\xB6\xAF\xB6\xCF\xB5\xE7, GPIO\xC7\xFD\xB6\xAF\xB3\xC9\xB9\xA6\r\n",
                        i + 1, LOCK_ON_TIME_MS);
 #else
-                printf("¡¾³¬Ê±±£»¤¡¿BOX%d Í¨µçÂú%dms×Ô¶¯¶Ïµç, I2C·¢ËÍ%s\r\n",
-                       i + 1, LOCK_ON_TIME_MS, err ? "Ê§°Ü(ÒÑÖØÊÔ3´Î)!!!" : "³É¹¦");
+                printf("\xA1\xBE\xB3\xAC\xCA\xB1\xB1\xA3\xBB\xA4\xA1\xBF" "BOX%d \xCD\xA8\xB5\xE7\xC2\xFA%dms\xD7\xD4\xB6\xAF\xB6\xCF\xB5\xE7, I2C\xB7\xA2\xCB\xCD%s\r\n",
+                       i + 1, LOCK_ON_TIME_MS, err ? "\xCA\xA7\xB0\xDC(\xD2\xD1\xD6\xD8\xCA\xD4" "3\xB4\xCE)!!!" : "\xB3\xC9\xB9\xA6");
 #endif
             }
         }
@@ -246,7 +246,7 @@ uint8_t Lock_GetActiveMask(void)
     return lock_out_bits;
 }
 
-/* ¶Á»ØÓ²¼þÊµ¼ÊÍ¨µçÑÚÂë(bit0~3: 1=¸ÃÂ·´¦ÓÚÍ¨µçµçÆ½); 0xFF=¶ÁÈ¡Ê§°Ü */
+/* è¯»å›žç¡¬ä»¶å®žé™…é€šç”µæŽ©ç (bit0~3: 1=è¯¥è·¯å¤„äºŽé€šç”µç”µå¹³); 0xFF=è¯»å–å¤±è´¥ */
 uint8_t Lock_HW_ReadBack(void)
 {
 #if LOCK_BACKEND_GPIO
@@ -256,9 +256,9 @@ uint8_t Lock_HW_ReadBack(void)
     {
         uint8_t pin_low = (GPIO_ReadInputDataBit(LOCK_GPIO_PORT, lock_pin[i]) == Bit_RESET);
 #if LOCK_ACTIVE_LOW
-        if (pin_low) m |= (uint8_t)(1u << i);   /* µÍµçÆ½=Í¨µç */
+        if (pin_low) m |= (uint8_t)(1u << i);   /* ä½Žç”µå¹³=é€šç”µ */
 #else
-        if (!pin_low) m |= (uint8_t)(1u << i);  /* ¸ßµçÆ½=Í¨µç */
+        if (!pin_low) m |= (uint8_t)(1u << i);  /* é«˜ç”µå¹³=é€šç”µ */
 #endif
     }
     return m;
@@ -278,6 +278,6 @@ uint8_t Lock_ReadFeedback(uint8_t id)
     uint8_t raw;
     if (id < 1 || id > LOCK_COUNT) return 2;
     if (PCF8574_ReadByte(&raw) != 0) return 2;
-    /* P4~P7¶ÔÓ¦Ëø1~4, ¸ßµçÆ½=ËøÉàÊÕ»Ø=ÒÑ¿ªËø */
+    /* P4~P7å¯¹åº”é”1~4, é«˜ç”µå¹³=é”èˆŒæ”¶å›ž=å·²å¼€é” */
     return (raw & (1u << (id + 3))) ? 1 : 0;
 }

@@ -21,16 +21,16 @@ static uint32_t s_last_vtick    = 0xFFFFFFFFu;
 /* ---- private state: offline keyword chat table ---- */
 typedef struct { uint8_t code; const char *text; const char *reply; } chat_kw_t;
 static const chat_kw_t s_chat_table[] = {
-    { 0x40, "ÄãºÃ",      "ÄãºÃÎÒÊÇÐ¡ÖÇÖÇÄÜ¿ìµÝ¹ñÇëÎÊÐèÒªÊ²Ã´°ïÖú" },
-    { 0x41, "½²¸öÐ¦»°",   "ÀëÏßÄ£Ê½½²²»ÁËÐ¦»°ÇëÁ¬ÎÒWiFiÊÔÒ»ÏÂ°É" },
-    { 0x42, "ÔÙ¼û",      "ÔÙ¼û»¶Ó­ÏÂ´ÎÔÙÀ´" },
-    { 0x43, "Ð»Ð»",      "²»¿ÍÆøËæÊ±ÎªÄã·þÎñ" },
-    { 0x44, "¿ªÆô",      "ºÃµÄÒÑ¾­¿ªÆô" },
-    { 0x45, "¹Ø±Õ",      "ºÃµÄÒÑ¾­¹Ø±Õ" },
-    { 0x47, "ÄãÊÇË­",    "ÎÒÊÇÐ¡ÖÇÖÇÄÜ¿ìµÝ¹ñÖúÊÖ" },
-    { 0x48, "½ñÌìÌìÆø",   "±§Ç¸Ã»ÁªÍø²é²»ÁËÌìÆø" },
-    { 0x49, "ÏÖÔÚ¼¸µã",   "±§Ç¸Ã»ÁªÍø²é²»ÁËÊ±¼ä" },
-    { 0x4A, "È¡¼þ",      "" },  /* empty reply: jump to pickup */
+    { 0x40, "\xC4\xE3\xBA\xC3",      "\xC4\xE3\xBA\xC3\xCE\xD2\xCA\xC7\xD0\xA1\xD6\xC7\xD6\xC7\xC4\xDC\xBF\xEC\xB5\xDD\xB9\xF1\xC7\xEB\xCE\xCA\xD0\xE8\xD2\xAA\xCA\xB2\xC3\xB4\xB0\xEF\xD6\xFA" },
+    { 0x41, "\xBD\xB2\xB8\xF6\xD0\xA6\xBB\xB0",   "\xC0\xEB\xCF\xDF\xC4\xA3\xCA\xBD\xBD\xB2\xB2\xBB\xC1\xCB\xD0\xA6\xBB\xB0\xC7\xEB\xC1\xAC\xCE\xD2WiFi\xCA\xD4\xD2\xBB\xCF\xC2\xB0\xC9" },
+    { 0x42, "\xD4\xD9\xBC\xFB",      "\xD4\xD9\xBC\xFB\xBB\xB6\xD3\xAD\xCF\xC2\xB4\xCE\xD4\xD9\xC0\xB4" },
+    { 0x43, "\xD0\xBB\xD0\xBB",      "\xB2\xBB\xBF\xCD\xC6\xF8\xCB\xE6\xCA\xB1\xCE\xAA\xC4\xE3\xB7\xFE\xCE\xF1" },
+    { 0x44, "\xBF\xAA\xC6\xF4",      "\xBA\xC3\xB5\xC4\xD2\xD1\xBE\xAD\xBF\xAA\xC6\xF4" },
+    { 0x45, "\xB9\xD8\xB1\xD5",      "\xBA\xC3\xB5\xC4\xD2\xD1\xBE\xAD\xB9\xD8\xB1\xD5" },
+    { 0x47, "\xC4\xE3\xCA\xC7\xCB\xAD",    "\xCE\xD2\xCA\xC7\xD0\xA1\xD6\xC7\xD6\xC7\xC4\xDC\xBF\xEC\xB5\xDD\xB9\xF1\xD6\xFA\xCA\xD6" },
+    { 0x48, "\xBD\xF1\xCC\xEC\xCC\xEC\xC6\xF8",   "\xB1\xA7\xC7\xB8\xC3\xBB\xC1\xAA\xCD\xF8\xB2\xE9\xB2\xBB\xC1\xCB\xCC\xEC\xC6\xF8" },
+    { 0x49, "\xCF\xD6\xD4\xDA\xBC\xB8\xB5\xE3",   "\xB1\xA7\xC7\xB8\xC3\xBB\xC1\xAA\xCD\xF8\xB2\xE9\xB2\xBB\xC1\xCB\xCA\xB1\xBC\xE4" },
+    { 0x4A, "\xC8\xA1\xBC\xFE",      "" },  /* empty reply: jump to pickup */
 };
 #define CHAT_KW_COUNT  (sizeof(s_chat_table) / sizeof(s_chat_table[0]))
 
@@ -67,12 +67,12 @@ void Voice_HandleCode(const char *code6)
     if (box == 0)
     {
         s_voice_pending = 0;
-        StatusBar_Set(SRC_VOICE, 0, "È¡¼þÂëÎÞÐ§");
-        SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]Ê¶±ðÎÞÐ§ÇëÖØÐÂËµ");
+        StatusBar_Set(SRC_VOICE, 0, "\xC8\xA1\xBC\xFE\xC2\xEB\xCE\xDE\xD0\xA7");
+        SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xCA\xB6\xB1\xF0\xCE\xDE\xD0\xA7\xC7\xEB\xD6\xD8\xD0\xC2\xCB\xB5");
         if (s_state == ST_MENU)
         {
             if (s_overlay && !s_chat_mode) Guide_ShowPartial();
-            else                           Menu_DrawVoxHint("È¡¼þÂëÎÞÐ§ ÇëËµÐ¡Ó£");
+            else                           Menu_DrawVoxHint("\xC8\xA1\xBC\xFE\xC2\xEB\xCE\xDE\xD0\xA7 \xC7\xEB\xCB\xB5\xD0\xA1\xD3\xA3");
         }
         return;
     }
@@ -92,7 +92,7 @@ void Voice_HandleCode(const char *code6)
     StatusBar_Set(SRC_VOICE, box, msg);
 
     DoOpenBox(box, SRC_VOICE);
-    SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]ÃÅÒÑ¿ªÇëÈ¡¼þ");
+    SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xC3\xC5\xD2\xD1\xBF\xAA\xC7\xEB\xC8\xA1\xBC\xFE");
     s_overlay = 0;
     s_chat_mode = 0;
     s_state = ST_PICKUP_DONE;
@@ -130,7 +130,7 @@ void Voice_HandleDigit(uint8_t idx, uint8_t val)
         strcat(tts, cn_digit[val]);
         SYN_FrameInfo(0, (uint8_t *)tts);
     }
-    StatusBar_Set(SRC_VOICE, 0, "ÇëÊäÈë");
+    StatusBar_Set(SRC_VOICE, 0, "\xC7\xEB\xCA\xE4\xC8\xEB");
     Voice_ShowPartial();
 }
 
@@ -141,8 +141,8 @@ void Voice_HandleUndo(void)
         s_vplen--;
         s_vpart[s_vplen] = 0;
         printf("[VOICE] UNDO %d left\r\n", (int)s_vplen);
-        SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]ÇëËµ");
-        StatusBar_Set(SRC_VOICE, 0, "ÇëÊäÈëÒ»Î»");
+        SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xC7\xEB\xCB\xB5");
+        StatusBar_Set(SRC_VOICE, 0, "\xC7\xEB\xCA\xE4\xC8\xEB\xD2\xBB\xCE\xBB");
         Voice_ShowPartial();
     }
 }
@@ -158,13 +158,13 @@ void Voice_HandlePending(const char *code6)
     s_vpart[6] = 0;
 
     strcpy(tts, "[v8][t5][m0]");
-    strcat(tts, "ÇëÊäÈëÈ¡¼þÂë");
+    strcat(tts, "\xC7\xEB\xCA\xE4\xC8\xEB\xC8\xA1\xBC\xFE\xC2\xEB");
     for (i = 0; i < 6; i++)
         strcat(tts, cn_digit[(uint8_t)(code6[i] - '0')]);
     strcat(tts, ",");
     SYN_FrameInfo(0, (uint8_t *)tts);
 
-    StatusBar_Set(SRC_VOICE, 0, "ÇëÈ·ÈÏ¶Ô»ò´í");
+    StatusBar_Set(SRC_VOICE, 0, "\xC7\xEB\xC8\xB7\xC8\xCF\xB6\xD4\xBB\xF2\xB4\xED");
     if (s_state == ST_MENU)
     {
         sprintf(hint, "code:%s", code6);
@@ -177,10 +177,10 @@ void Voice_HandleRetry(void)
 {
     s_vplen = 0;
     s_vpart[0] = 0;
-    StatusBar_Set(SRC_VOICE, 0, "ÇëÊäÈë");
-    SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]ÇëËµ");
+    StatusBar_Set(SRC_VOICE, 0, "\xC7\xEB\xCA\xE4\xC8\xEB");
+    SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xC7\xEB\xCB\xB5");
     if (s_state == ST_MENU)
-        Menu_DrawVoxHint("ÇëÊäÈë");
+        Menu_DrawVoxHint("\xC7\xEB\xCA\xE4\xC8\xEB");
     printf("[VOICE] retry\r\n");
 }
 
@@ -190,10 +190,10 @@ void Voice_HandleWake(void)
     s_chat_busy = 0;
     s_vplen    = 0;
     s_vpart[0] = 0;
-    StatusBar_Set(SRC_VOICE, 0, "ÇëÊäÈë");
+    StatusBar_Set(SRC_VOICE, 0, "\xC7\xEB\xCA\xE4\xC8\xEB");
     /* SHORT cue (~1s): digit entry can start quickly. Full instructions
        stay on the screen hint so the TTS does not need to say them. */
-    SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]ÇëÖØÐÂËµ");
+    SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xC7\xEB\xD6\xD8\xD0\xC2\xCB\xB5");
     if (s_state == ST_MENU) {
         Menu_DrawPickupGuide();
 
@@ -206,11 +206,11 @@ void Voice_HandleChatWake(void)
     s_chat_mode = 1;
     s_chat_busy = 0;
     s_chat_tick = loop_tick;
-    StatusBar_Set(SRC_VOICE, 0, "¶Ô»°Ä£Ê½ ËµÐ¡ÖÇÌáÎÊ");
-    SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]ÄãºÃÎÒÔÚÇëÌáÎÊ");
+    StatusBar_Set(SRC_VOICE, 0, "\xB6\xD4\xBB\xB0\xC4\xA3\xCA\xBD \xCB\xB5\xD0\xA1\xD6\xC7\xCC\xE1\xCE\xCA");
+    SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xC4\xE3\xBA\xC3\xCE\xD2\xD4\xDA\xC7\xEB\xCC\xE1\xCE\xCA");
     if (s_state == ST_MENU) {
         Menu_DrawChatPanel();
-        Menu_DrawVoxHint("Ëµ¹Ø¼ü´Ê Ð¡ÖÇÌýµ½");
+        Menu_DrawVoxHint("\xCB\xB5\xB9\xD8\xBC\xFC\xB4\xCA \xD0\xA1\xD6\xC7\xCC\xFD\xB5\xBD");
     }
     printf("[VOICE] chat wake\r\n");
 }
@@ -227,7 +227,7 @@ void Chat_HandleKeyword(uint8_t code)
     s_chat_tick = loop_tick;
     printf("[CHAT] kw[%d]:%s\r\n", code, text);
 
-    /* special keyword: "È¡" jumps straight to the pickup keypad */
+    /* special keyword: "å–" jumps straight to the pickup keypad */
     if (code == 0x4A)
     {
         s_chat_mode = 0;
@@ -235,8 +235,8 @@ void Chat_HandleKeyword(uint8_t code)
         s_chat_busy = 0;
         s_state = ST_PICKUP_KEYPAD;
         s_overlay = 0;
-        Keypad_Begin("È¡¼þ", "ÇëÊäÈëÁùÎ»Êý×ÖÈ¡¼þÂë");
-        StatusBar_Set(SRC_VOICE, 0, "ÇëÊäÈëÈ¡¼þÂë");
+        Keypad_Begin("\xC8\xA1\xBC\xFE", "\xC7\xEB\xCA\xE4\xC8\xEB\xC1\xF9\xCE\xBB\xCA\xFD\xD7\xD6\xC8\xA1\xBC\xFE\xC2\xEB");
+        StatusBar_Set(SRC_VOICE, 0, "\xC7\xEB\xCA\xE4\xC8\xEB\xC8\xA1\xBC\xFE\xC2\xEB");
         return;
     }
 
@@ -248,17 +248,17 @@ void Chat_HandleKeyword(uint8_t code)
         if (ESP8266_SendText(sendbuf))
         {
             s_chat_busy = 1;
-            StatusBar_Set(SRC_VOICE, 0, "ÇëÊäÈë");
+            StatusBar_Set(SRC_VOICE, 0, "\xC7\xEB\xCA\xE4\xC8\xEB");
             if (s_state == ST_MENU) Menu_DrawVoxHint(text);
         }
-        else SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]ÍøÂç·±Ã¦ÇëÉÔºò");
+        else SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xCD\xF8\xC2\xE7\xB7\xB1\xC3\xA6\xC7\xEB\xC9\xD4\xBA\xF2");
     }
     else
     {
         strcpy(tts, "[v8][t5][m0]");
         strcat(tts, s_chat_table[i].reply);
         if (s_chat_table[i].reply[0]) SYN_FrameInfo(0, (uint8_t *)tts);
-        if (!ESP8266_IsReady()) StatusBar_Set(SRC_VOICE, 0, "Î´Á¬Íø¶Ô»°Ä£Ê½");
+        if (!ESP8266_IsReady()) StatusBar_Set(SRC_VOICE, 0, "\xCE\xB4\xC1\xAC\xCD\xF8\xB6\xD4\xBB\xB0\xC4\xA3\xCA\xBD");
     }
 }
 
@@ -275,7 +275,7 @@ void Chat_HandleResponse(const char *reply)
         strncat(tts, ai_msg, sizeof(tts) - strlen(tts) - 1);
         SYN_FrameInfo(0, (uint8_t *)tts);
     }
-    StatusBar_Set(SRC_VOICE, 0, "¶Ô»°Ä£Ê½ ËµÐ¡ÖÇÌáÎÊ");
+    StatusBar_Set(SRC_VOICE, 0, "\xB6\xD4\xBB\xB0\xC4\xA3\xCA\xBD \xCB\xB5\xD0\xA1\xD6\xC7\xCC\xE1\xCE\xCA");
 }
 
 void Voice_TouchDigit(uint8_t val)
@@ -295,5 +295,5 @@ void Voice_TouchReset(void)
     s_vpart[0] = 0;
     s_vpart[6] = 0;
     Guide_ShowPartial();
-    StatusBar_Set(SRC_TOUCH, 0, "ÒÑÖØÊä");
+    StatusBar_Set(SRC_TOUCH, 0, "\xD2\xD1\xD6\xD8\xCA\xE4");
 }

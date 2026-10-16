@@ -65,7 +65,7 @@ void State_Menu(uint8_t td_held, uint16_t lx, uint16_t ly)
             s_vplen = 0;
             s_vpart[0] = 0;
             Menu_Draw();
-            StatusBar_Set(SRC_TOUCH, 0, "“—»°œ˚");
+            StatusBar_Set(SRC_TOUCH, 0, "\xD2\xD1\xC8\xA1\xCF\xFB");
         }
         return;
     }
@@ -95,8 +95,8 @@ void State_Menu(uint8_t td_held, uint16_t lx, uint16_t ly)
             if (lx < LCD_W / 2)
             {
                 s_state = ST_DEPOSIT_KEYPAD;
-                Keypad_Begin("Õ∂º˛", "«Î ‰»Î ÷ª˙∫≈");
-                StatusBar_Set(SRC_TOUCH, 0, "Õ∂º˛:«Î ‰»Î ÷ª˙∫≈");
+                Keypad_Begin("\xCD\xB6\xBC\xFE", "\xC7\xEB\xCA\xE4\xC8\xEB\xCA\xD6\xBB\xFA\xBA\xC5");
+                StatusBar_Set(SRC_TOUCH, 0, "\xCD\xB6\xBC\xFE:\xC7\xEB\xCA\xE4\xC8\xEB\xCA\xD6\xBB\xFA\xBA\xC5");
             }
             else
             {
@@ -117,8 +117,8 @@ void State_Menu(uint8_t td_held, uint16_t lx, uint16_t ly)
     if (PickBtn_Scan(td_held, lx, ly))
     {
         s_state = ST_PICKUP_KEYPAD;
-        Keypad_Begin("»°º˛", "«Î ‰»Î¡˘Œª ˝◊÷»°º˛¬Î");
-        StatusBar_Set(SRC_TOUCH, 0, "»°º˛:«Î ‰»Î»°º˛¬Î");
+        Keypad_Begin("\xC8\xA1\xBC\xFE", "\xC7\xEB\xCA\xE4\xC8\xEB\xC1\xF9\xCE\xBB\xCA\xFD\xD7\xD6\xC8\xA1\xBC\xFE\xC2\xEB");
+        StatusBar_Set(SRC_TOUCH, 0, "\xC8\xA1\xBC\xFE:\xC7\xEB\xCA\xE4\xC8\xEB\xC8\xA1\xBC\xFE\xC2\xEB");
     }
 }
 
@@ -130,7 +130,7 @@ void State_DepositKeypad(uint8_t td_held, uint16_t lx, uint16_t ly)
     {
         s_state = ST_MENU;
         Menu_Draw();
-        StatusBar_Set(SRC_TOUCH, 0, "»°º˛¬Î“—»°º˛");
+        StatusBar_Set(SRC_TOUCH, 0, "\xC8\xA1\xBC\xFE\xC2\xEB\xD2\xD1\xC8\xA1\xBC\xFE");
     }
     else if (r == KP_DONE)
     {
@@ -159,14 +159,14 @@ void State_DepositKeypad(uint8_t td_held, uint16_t lx, uint16_t ly)
             DoOpenBox(box, SRC_TOUCH);
             sprintf(msg, "deposit OK #%d code=%s", box, s_res_code);
             StatusBar_Set(SRC_TOUCH, box, msg);
-            SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]√≈“—ø™«ÎÕ∂º˛");
+            SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xC3\xC5\xD2\xD1\xBF\xAA\xC7\xEB\xCD\xB6\xBC\xFE");
             printf("[DEPOSIT] phone %s -> box %d code %s\r\n", buf, box, s_res_code);
         }
         else
         {
 
-            strcpy(s_res_msg, "œ‰“—¬˙");
-            StatusBar_Set(SRC_TOUCH, 0, "œ‰“—¬˙");
+            strcpy(s_res_msg, "\xCF\xE4\xD2\xD1\xC2\xFA");
+            StatusBar_Set(SRC_TOUCH, 0, "\xCF\xE4\xD2\xD1\xC2\xFA");
             printf("[DEPOSIT] phone %s -> all boxes full\r\n", buf);
         }
         s_state = ST_DEPOSIT_DONE;
@@ -182,12 +182,12 @@ void Kpad_AnnounceConfirm(void)
     Keypad_GetCode(code);
     s_kpad_confirm = 1;
     strcpy(tts, "[v8][t5][m0]");
-    strcat(tts, "ƒ˙µƒ»°º˛¬Î «");
+    strcat(tts, "\xC4\xFA\xB5\xC4\xC8\xA1\xBC\xFE\xC2\xEB\xCA\xC7");
     for (i = 0; i < 6; i++)
         strcat(tts, cn_digit[(uint8_t)(code[i] - 0x30)]);
-    strcat(tts, ",∂‘¬");
+    strcat(tts, ",\xB6\xD4\xC2\xF0");
     SYN_FrameInfo(0, (uint8_t *)tts);
-    StatusBar_Set(SRC_VOICE, 0, "«Î»∑»œ»°º˛¬Î");
+    StatusBar_Set(SRC_VOICE, 0, "\xC7\xEB\xC8\xB7\xC8\xCF\xC8\xA1\xBC\xFE\xC2\xEB");
     printf("[KPAD] announce %s\r\n", code);
 }
 
@@ -212,14 +212,14 @@ void Kpad_DoPickup(void)
         DoOpenBox(box, SRC_TOUCH);
         sprintf(msg, "pickup OK #%d", box);
         StatusBar_Set(SRC_TOUCH, box, msg);
-        SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]√≈“—ø™«Î»°º˛");
+        SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xC3\xC5\xD2\xD1\xBF\xAA\xC7\xEB\xC8\xA1\xBC\xFE");
         printf("[KPAD] code %s -> box %d opened\r\n", code, box);
     }
     else
     {
-        strcpy(s_res_msg, "»°º˛¬ÎŒﬁ–ß");
-        StatusBar_Set(SRC_TOUCH, 0, "»°º˛¬ÎŒﬁ–ß");
-        SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0] ∂±Œﬁ–ß");
+        strcpy(s_res_msg, "\xC8\xA1\xBC\xFE\xC2\xEB\xCE\xDE\xD0\xA7");
+        StatusBar_Set(SRC_TOUCH, 0, "\xC8\xA1\xBC\xFE\xC2\xEB\xCE\xDE\xD0\xA7");
+        SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xCA\xB6\xB1\xF0\xCE\xDE\xD0\xA7");
         printf("[KPAD] code %s -> not found\r\n", code);
     }
     s_state = ST_PICKUP_DONE;
@@ -235,9 +235,9 @@ void State_PickupKeypad(uint8_t td_held, uint16_t lx, uint16_t ly)
         s_kpad_confirm = 0;
         s_state = ST_MENU;
         Menu_Draw();
-        StatusBar_Set(SRC_TOUCH, 0, "»°º˛¬Î“—»°œ˚");
+        StatusBar_Set(SRC_TOUCH, 0, "\xC8\xA1\xBC\xFE\xC2\xEB\xD2\xD1\xC8\xA1\xCF\xFB");
     }
-    else if (r == KP_DONE)   /* »∑»œ button pressed with 6 digits */
+    else if (r == KP_DONE)   /* Á°ÆËÆ§ button pressed with 6 digits */
     {
         Kpad_DoPickup();
     }
@@ -260,7 +260,7 @@ void State_PickupKeypad(uint8_t td_held, uint16_t lx, uint16_t ly)
 
 void State_DoneBack(uint8_t td_held, uint16_t lx, uint16_t ly)
 {
-    /* On pickup success the screen offers "‘Ÿ»°“ªº˛" which returns to the
+    /* On pickup success the screen offers "ÂÜçÂèñ‰∏Ä‰ª∂" which returns to the
        keypad without disturbing the in-progress door flow; the box is
        released automatically when the door closes or the 30s timer fires. */
     if (s_state == ST_PICKUP_DONE && s_res_ok)
@@ -268,8 +268,8 @@ void State_DoneBack(uint8_t td_held, uint16_t lx, uint16_t ly)
         if (Button_Scan(&s_btn_continue, td_held, lx, ly))
         {
             s_state = ST_PICKUP_KEYPAD;
-            Keypad_Begin("»°º˛", "«Î ‰»Î¡˘Œª ˝◊÷»°º˛¬Î");
-            StatusBar_Set(SRC_TOUCH, 0, "»°º˛:«Î ‰»Î»°º˛¬Î");
+            Keypad_Begin("\xC8\xA1\xBC\xFE", "\xC7\xEB\xCA\xE4\xC8\xEB\xC1\xF9\xCE\xBB\xCA\xFD\xD7\xD6\xC8\xA1\xBC\xFE\xC2\xEB");
+            StatusBar_Set(SRC_TOUCH, 0, "\xC8\xA1\xBC\xFE:\xC7\xEB\xCA\xE4\xC8\xEB\xC8\xA1\xBC\xFE\xC2\xEB");
             return;
         }
     }

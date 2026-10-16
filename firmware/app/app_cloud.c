@@ -48,7 +48,7 @@ static void Cloud_SendStatus(void)
         {
             strcpy(cbuf, "------");
         }
-        /* ÃÅ´Å: 1=¿ª. I2C¶ÁÊ§°Ü(2)°´¡°¹Ø¡±´¦Àí, ±ÜÃâÎó±¨ÃÅ¿ª */
+        /* é—¨ç£: 1=å¼€. I2Cè¯»å¤±è´¥(2)æŒ‰â€œå…³â€å¤„ç†, é¿å…è¯¯æŠ¥é—¨å¼€ */
         if (Lock_ReadFeedback(i) == 1) door |= (uint8_t)(1u << (i - 1));
         if (i > 1) snap[o++] = '|';
         o += (uint8_t)sprintf(snap + o, "%d:%s", (int)i, cbuf);
@@ -70,7 +70,7 @@ static void Cloud_RemoteOpen(uint8_t box)
     s_door_open_tick[idx] = loop_tick;
     s_door_db[idx]    = 0;
     DoOpenBox(box, SRC_TOUCH);
-    StatusBar_Set(SRC_TOUCH, box, "Ô¶³Ì¿ªËø");
+    StatusBar_Set(SRC_TOUCH, box, "\xD4\xB6\xB3\xCC\xBF\xAA\xCB\xF8");
     s_overlay   = 0;
     s_chat_mode = 0;
     s_state = ST_PICKUP_DONE;
@@ -133,7 +133,7 @@ void Cloud_Tick(void)
         s_cloud_was_up = 1;
         Cloud_Queue("HELLO");
     }
-    /* ¶Ô»°Ä£Ê½ÓÅÏÈÕ¼ÓÃ·¢ËÍ»º³å, ±ğ°Ñ CHAT: ÉÏĞĞ¼·µô */
+    /* å¯¹è¯æ¨¡å¼ä¼˜å…ˆå ç”¨å‘é€ç¼“å†², åˆ«æŠŠ CHAT: ä¸Šè¡ŒæŒ¤æ‰ */
     if (s_chat_mode || s_chat_busy) return;
 
     if (s_cloud_pend_n)

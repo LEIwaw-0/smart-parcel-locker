@@ -47,5 +47,5 @@ uint32_t s_door_open_tick[BOX_COUNT];
 
 /* Chinese digits for the conversational TTS readback (GBK literals) */
 const char *const cn_digit[10] = {
-    "0","一","二","三","四","五","六","七","八","九"
+    "0","\xD2\xBB","\xB6\xFE","\xC8\xFD","\xCB\xC4","\xCE\xE5","\xC1\xF9","\xC6\xDF","\xB0\xCB","\xBE\xC5"
 };

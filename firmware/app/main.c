@@ -112,10 +112,10 @@ int main(void)
 
     Lock_Init();
 
-    /* ---- ÉÏµç°²È«: Ö»Ç¿ÖÆ¹ØËø, ¾ø²»×ö¿ªËø×Ô¼ì ----
-       Ô­×Ô¼ì»áÈÃ4Â·¼ÌµçÆ÷¸÷ÎüºÏ300ms, µÈÓÚÃ¿´ÎÉÏµç¶¼°Ñ4¸ö¹ñÃÅ´ò¿ªÒ»´Î,
-       ´æÔÚ°²È«Òþ»¼¡£ÏÖÔÚÉÏµçÖ»°ÑËùÓÐÏßÈ¦ÖÃÎª¶Ï¿ª, ÔÙ¶ÁÒ»´ÎP4-P7ÃÅ×´Ì¬·´À¡,
-       ÕâÑù¼ÌµçÆ÷Õ³Á¬ÈÔÄÜÔÚ´®¿Ú¿´µ½, µ«²»»á´ò¿ªÈÎºÎ¹ñÃÅ¡£ */
+    /* ---- ä¸Šç”µå®‰å…¨: åªå¼ºåˆ¶å…³é”, ç»ä¸åšå¼€é”è‡ªæ£€ ----
+       åŽŸè‡ªæ£€ä¼šè®©4è·¯ç»§ç”µå™¨å„å¸åˆ300ms, ç­‰äºŽæ¯æ¬¡ä¸Šç”µéƒ½æŠŠ4ä¸ªæŸœé—¨æ‰“å¼€ä¸€æ¬¡,
+       å­˜åœ¨å®‰å…¨éšæ‚£ã€‚çŽ°åœ¨ä¸Šç”µåªæŠŠæ‰€æœ‰çº¿åœˆç½®ä¸ºæ–­å¼€, å†è¯»ä¸€æ¬¡P4-P7é—¨çŠ¶æ€åé¦ˆ,
+       è¿™æ ·ç»§ç”µå™¨ç²˜è¿žä»èƒ½åœ¨ä¸²å£çœ‹åˆ°, ä½†ä¸ä¼šæ‰“å¼€ä»»ä½•æŸœé—¨ã€‚ */
     printf("BOOT: forcing all locks OFF (no self-test pulse)\r\n");
     for (i = 1; i <= LOCK_COUNT; i++)
         Lock_Close(i);
@@ -147,7 +147,7 @@ int main(void)
     ESP8266_Init();
     printf("BOOT: SYN6288 (PC10) + LD3320 (PA3) + ESP8266 (PB10) initialised\r\n");
 
-    SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]»¶Ó­Ê¹ÓÃ¿ìµÝ¹ñ");
+    SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xBB\xB6\xD3\xAD\xCA\xB9\xD3\xC3\xBF\xEC\xB5\xDD\xB9\xF1");
     printf("BOOT: welcome spoken\r\n");
     delay_ms(1500);
 
@@ -238,11 +238,11 @@ int main(void)
                 else if (strncmp(raw, "HB", 2) == 0)
                     printf("HB");
                 else if (strncmp(raw, "LD-DIGIT", 8) == 0)
-                    printf("Ä£¿é¾ÍÐ÷");
+                    printf("\xC4\xA3\xBF\xE9\xBE\xCD\xD0\xF7");
                 else if (strncmp(raw, "LD_OK", 5) == 0)
-                    printf("×Ô¼ìÍ¨¹ý %s", raw+5);
+                    printf("\xD7\xD4\xBC\xEC\xCD\xA8\xB9\xFD %s", raw+5);
                 else if (strncmp(raw, "LD_ERR", 6) == 0)
-                    printf("×Ô¼ìÊ§°Ü");
+                    printf("\xD7\xD4\xBC\xEC\xCA\xA7\xB0\xDC");
                 else
                     printf("%s", raw);
                 printf("\r\n");
@@ -281,7 +281,7 @@ int main(void)
                 {
                     /* On the pickup keypad, voice digits share the same
                        buffer as touch. 6 digits full -> announce & wait
-                       for "¶Ô" or the È·ÈÏ button. */
+                       for "å¯¹" or the ç¡®è®¤ button. */
                     if (LD3320_GetDigit(&didx, &dval))
                     {
                         Keypad_InjectDigit((char)(0x30 + dval));
@@ -311,8 +311,8 @@ int main(void)
                     {
                         Keypad_ClearAll();
                         s_kpad_confirm = 0;
-                        SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]ÇëÖØËµ");
-                        StatusBar_Set(SRC_VOICE, 0, "ÇëÖØÐÂÊäÈë");
+                        SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xC7\xEB\xD6\xD8\xCB\xB5");
+                        StatusBar_Set(SRC_VOICE, 0, "\xC7\xEB\xD6\xD8\xD0\xC2\xCA\xE4\xC8\xEB");
                         printf("[VOICE][KPAD] retry\r\n");
                     }
                     else if (LD3320_GetCode(code))
@@ -325,8 +325,8 @@ int main(void)
                         int cmd = LD3320_GetCmd();
                         if (cmd == LD_CMD_PASSWORD)
                         {
-                            SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]ÔÚµÄÇëËµ");
-                            StatusBar_Set(SRC_VOICE, 0, "ÇëËµÈ¡¼þÂë");
+                            SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xD4\xDA\xB5\xC4\xC7\xEB\xCB\xB5");
+                            StatusBar_Set(SRC_VOICE, 0, "\xC7\xEB\xCB\xB5\xC8\xA1\xBC\xFE\xC2\xEB");
                             printf("[VOICE][KPAD] wake\r\n");
                         }
                         else if (cmd == LD_CMD_NO_PASSWD)
@@ -334,7 +334,7 @@ int main(void)
                             /* Keep the keypad screen & entered digits;
                                just prompt the user to re-wake. */
                             printf("[VOICE][KPAD] timeout (keep screen)\r\n");
-                            StatusBar_Set(SRC_VOICE, 0, "ÇëËµÐ¡Ó£¼ÌÐø");
+                            StatusBar_Set(SRC_VOICE, 0, "\xC7\xEB\xCB\xB5\xD0\xA1\xD3\xA3\xBC\xCC\xD0\xF8");
                         }
                         else if (cmd >= 0)
                             printf("[CMD] %d", cmd);
@@ -389,9 +389,9 @@ int main(void)
                             s_voice_pending = 0;
                             s_vplen    = 0;
                             s_vpart[0] = 0;
-                            StatusBar_Set(SRC_VOICE, 0, "ÓïÒô³¬Ê±ÇëÖØËµ");
+                            StatusBar_Set(SRC_VOICE, 0, "\xD3\xEF\xD2\xF4\xB3\xAC\xCA\xB1\xC7\xEB\xD6\xD8\xCB\xB5");
                             if (s_state == ST_MENU)
-                                Menu_DrawVoxHint("³¬Ê± ÖØËµÐ¡Ó£");
+                                Menu_DrawVoxHint("\xB3\xAC\xCA\xB1 \xD6\xD8\xCB\xB5\xD0\xA1\xD3\xA3");
                         }
                         else if (cmd >= 0)
                             printf("[CMD] %d", cmd);
@@ -412,14 +412,14 @@ int main(void)
             {
                 s_chat_mode = 0;
                 s_chat_busy = 0;
-                StatusBar_Set(SRC_VOICE, 0, "¶Ô»°ÒÑ³¬Ê±");
+                StatusBar_Set(SRC_VOICE, 0, "\xB6\xD4\xBB\xB0\xD2\xD1\xB3\xAC\xCA\xB1");
                 if (s_state == ST_MENU)
                     Menu_DrawVoxHint(0);
                 printf("[CHAT] idle timeout\r\n");
             }
         }
 
-        /* ---- ÔÆ¶ËÏÂÐÐ: Óë¶Ô»°Ä£Ê½ÎÞ¹Ø, ±ØÐëÎÞÌõ¼þÅÅ¿Õ½ÓÊÕ¶ÓÁÐ ---- */
+        /* ---- äº‘ç«¯ä¸‹è¡Œ: ä¸Žå¯¹è¯æ¨¡å¼æ— å…³, å¿…é¡»æ— æ¡ä»¶æŽ’ç©ºæŽ¥æ”¶é˜Ÿåˆ— ---- */
         {
             char cline[200];
             uint8_t guard = 0;
