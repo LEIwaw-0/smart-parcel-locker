@@ -40,11 +40,28 @@ enum {
 #define DOOR_W_OPEN   1
 #define DOOR_W_CLOSE  2
 #define DOOR_DONE     3
-#define PICKUP_TIMEOUT_TICKS  6000u   /* 30s at ~5ms per loop */
+#define PICKUP_TIMEOUT_MS   30000u   /* 30s: box left ajar -> item assumed taken */
 
-/* ---- voice ---- */
-#define VOICE_DEDUP_TICKS  1600u      /* 1600 x 5ms = 8s */
-#define CHAT_IDLE_TICKS    5000u      /* 25s: STC11 deaf-window + listen + reaction */
+/* ---- touch task cadence ----
+   5ms   : raw sample + debounce (the driver's own timing)
+   50ms  : a held finger is re-announced this often, so the title-bar
+           long press and a finger sliding off a button are still seen */
+#define TOUCH_SAMPLE_MS     5u
+#define TOUCH_REPEAT_MS     50u
+
+/* ---- door task cadence ----
+   20ms  : relay auto-off watchdog (Lock_Tick, 2s solenoid protection)
+   200ms : PCF8574 door-feedback poll + phase advance (was 40 x 5ms)   */
+#define DOOR_LOCK_MS        20u
+#define DOOR_FB_POLL_MS     200u
+
+/* ---- voice ----
+   All timings are milliseconds now: the old "x 5ms per loop" counters are
+   gone with the superloop, everything runs off App_Ms() / vTaskDelay().   */
+#define VOICE_DEDUP_MS      8000u    /* same code twice within 8s = a repeat */
+#define CHAT_IDLE_MS        25000u   /* 25s: STC11 deaf-window + listen + reaction */
+#define VOX_HINT_MS         2000u    /* how long a voice hint stays on the menu */
+#define VOX_HINT_LONG_MS    5000u    /* digit-capture progress stays longer */
 
 /* ---- wall clock / weather over the borrowed ESP8266 link ----
    No RTC on the board: the clock is seeded from the HTTP "Date:"
@@ -52,9 +69,9 @@ enum {
 #define WX_HOST            "d1.weather.com.cn"
 #define WX_PATH            "/sk_2d/101270107.html"
 
-#define WX_FIRST_TICKS      1200u     /* first sync ~6s after boot  */
-#define WX_REFRESH_TICKS   36000u     /* re-sync every ~180s        */
-#define WX_RETRY_TICKS      2400u     /* retry after failure (~12s) */
+#define WX_FIRST_MS         6000u     /* first sync ~6s after boot   */
+#define WX_REFRESH_MS      180000u    /* re-sync every ~180s         */
+#define WX_RETRY_MS         12000u    /* retry after failure (~12s)  */
 #define CLK_CYC_PER_MS     168000u    /* DWT cycles per millisecond */
 #define CLK_CYC_PER_SEC    (CLK_CYC_PER_MS * 1000u)
 
@@ -76,16 +93,22 @@ enum {
 #define PICK_Y1  200
 #define PICK_X2  380
 #define PICK_Y2  270
-#define TITLE_HOLD_TICKS  600u  /* 3s at ~5ms per loop */
+#define TITLE_HOLD_MS     3000u   /* hold the title bar this long for admin */
 
 /* ---- cloud link (TCP 8090) ----
    Uplink:   HELLO / STATUS <occ_mask> <door_mask> <code snapshots>
              DEPOSITED n / PICKED n
    Downlink: OPEN n / UNLOCK n, SET n <code6>, CLEAR n, AI:<text>
-   Door_Tick() runs when the link may be busy, so messages are queued
-   and Cloud_Tick() drains the queue once the link is idle again. */
+   Every uplink line (HELLO / STATUS / DEPOSITED / PICKED / CHAT:) is posted
+   to q_link, and the link task sends it once the ESP8266 is idle again. */
 #define CLOUD_PEND_MAX      4
 #define CLOUD_PEND_LEN      24
-#define CLOUD_STATUS_TICKS  400u   /* 400 x 5ms = 2s */
+#define CLOUD_STATUS_MS     2000u   /* push one STATUS line this often */
+
+/* ---- UI task housekeeping cadence ----
+   The UI task blocks on its event queue; the timeout only exists so the
+   deadline checks (chat idle, hint expiry, the 2s STATUS push, the 200ms
+   DONE-screen band) still get serviced.  Nothing is polled here. */
+#define UI_TICK_MS     50u
 
 #endif /* __APP_CONFIG_H */

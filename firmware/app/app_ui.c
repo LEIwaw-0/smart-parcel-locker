@@ -6,10 +6,10 @@
 ******************************************************/
 #include "app_ui.h"
 #include "app_ctx.h"
+#include "app_rtos.h"     /* App_Ms / g_voice_seen / g_link_status snapshots */
 #include "app_clock.h"
 #include "app_door.h"     /* DoorStatus_Draw on the DONE screens */
 #include "codebox.h"
-#include "esp8266.h"
 #include "lcd.h"
 #include <stdio.h>
 #include <string.h>
@@ -48,7 +48,10 @@ static void TitleBar_Draw(void)
 
 void TitleBar_DrawLink(void)
 {
-    uint8_t up = (uint8_t)((ESP8266_IsReady() || ESP8266_FetchBusy()) ? 1 : 0);
+    /* the link task publishes both lamps; the badge semantics are unchanged:
+       "connected" while the relay TCP is up, or while a weather fetch owns
+       the link". */
+    uint8_t up = (uint8_t)((g_link_up || g_link_fetch) ? 1 : 0);
     if (s_link_shown == up) return;
     s_link_shown = up;
     LCD_FillRound(340, 4, 470, 30, 13, COLOR_BG);
@@ -96,7 +99,7 @@ void Menu_DrawVoxHint(const char *raw)
         strncat(buf, raw, sizeof(buf) - strlen(buf) - 1);
         LCD_ShowStringCN(8, 277, buf, COLOR_YELLOW, COLOR_BG, 1);
     }
-    else if (!s_voice_seen && loop_tick > 1000)  /* 5s with no LD3320 data */
+    else if (!g_voice_seen && App_Ms() > 5000)   /* 5s with no LD3320 data */
     {
         LCD_ShowStringCN(140, 277, "\xD3\xEF\xD2\xF4\xC4\xA3\xBF\xE9\xCE\xDE\xCF\xEC\xD3\xA6 \xC7\xEB\xBC\xEC\xB2\xE9\xBD\xD3\xCF\xDF", COLOR_RED, COLOR_BG, 1);
     }

@@ -94,8 +94,11 @@ void LD3320_Init(void)
 
     USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
 
+    /* FreeRTOS 接入后 NVIC 分组为 Group_4（4 位全抢占），此数值即抢占优先级。
+       必须 >= configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY(5)，否则一旦在中断里
+       调用 FromISR 版本的内核 API 就会触发 configASSERT。统一用 6。 */
     NVIC_InitStructure.NVIC_IRQChannel                   = USART2_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 6;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority        = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd                = ENABLE;
     NVIC_Init(&NVIC_InitStructure);

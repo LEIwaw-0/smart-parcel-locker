@@ -1,10 +1,14 @@
 /******************************************************
 **  app_cloud.c - TCP link to the locker server (port 8090).
 **
-**  Split out of the monolithic main.c; bodies are unchanged.
+**  Split out of the monolithic main.c; the parsing is unchanged.  Only
+**  the transport moved: every uplink line is posted to the link task
+**  instead of being written to the ESP8266 from here, and the door mask
+**  now comes from the door task's g_door_fb snapshot.
 ******************************************************/
 #include "app_cloud.h"
 #include "app_ctx.h"
+#include "app_rtos.h"
 #include "app_door.h"     /* DoOpenBox */
 #include "app_ui.h"       /* StatusBar_Set, PickupDone_Draw */
 #include "app_voice.h"    /* Chat_HandleResponse */
@@ -14,18 +18,9 @@
 #include <stdio.h>
 #include <string.h>
 
-/* ---- private state: pending-line queue + link bookkeeping ---- */
-static char     s_cloud_pend[CLOUD_PEND_MAX][CLOUD_PEND_LEN];
-static uint8_t  s_cloud_pend_n = 0;
-static uint8_t  s_cloud_was_up = 0;
-static uint16_t s_cloud_div    = 0;
-
 void Cloud_Queue(const char *line)
 {
-    if (s_cloud_pend_n >= CLOUD_PEND_MAX) return;
-    strncpy(s_cloud_pend[s_cloud_pend_n], line, CLOUD_PEND_LEN - 1);
-    s_cloud_pend[s_cloud_pend_n][CLOUD_PEND_LEN - 1] = 0;
-    s_cloud_pend_n++;
+    App_LinkPost(line);
 }
 
 static void Cloud_SendStatus(void)
@@ -48,29 +43,23 @@ static void Cloud_SendStatus(void)
         {
             strcpy(cbuf, "------");
         }
-        /* 门磁: 1=开. I2C读失败(2)按“关”处理, 避免误报门开 */
-        if (Lock_ReadFeedback(i) == 1) door |= (uint8_t)(1u << (i - 1));
+        /* 门磁: 1=开. I2C读失败按“关”处理, 避免误报门开 */
+        if ((g_door_fb >> (i - 1)) & 1u) door |= (uint8_t)(1u << (i - 1));
         if (i > 1) snap[o++] = '|';
         o += (uint8_t)sprintf(snap + o, "%d:%s", (int)i, cbuf);
     }
     snap[o] = 0;
     sprintf(line, "STATUS %d %d %s", (int)occ, (int)door, snap);
-    ESP8266_SendText(line);
+    Cloud_Queue(line);
     printf("[CLOUD] %s\r\n", line);
 }
 
 static void Cloud_RemoteOpen(uint8_t box)
 {
-    uint8_t idx = (uint8_t)(box - 1);
     s_res_box  = box;
     s_res_ok   = 1;
-    s_door_flow[idx]  = 3;
-    s_door_src[idx]   = SRC_TOUCH;
-    s_door_phase[idx] = DOOR_W_OPEN;
-    s_door_open_tick[idx] = loop_tick;
-    s_door_db[idx]    = 0;
-    DoOpenBox(box, SRC_TOUCH);
-    StatusBar_Set(SRC_TOUCH, box, "\xD4\xB6\xB3\xCC\xBF\xAA\xCB\xF8");
+    DoOpenBox(box, SRC_TOUCH, 3);
+    StatusBar_Set(SRC_TOUCH, box, "\xD2\xD1\xBF\xAA\xCB\xF8");   /* 已开锁: all glyphs in HZFont */
     s_overlay   = 0;
     s_chat_mode = 0;
     s_state = ST_PICKUP_DONE;
@@ -121,36 +110,18 @@ void Cloud_HandleLine(const char *line)
     Cloud_RemoteOpen((uint8_t)b);
 }
 
-void Cloud_Tick(void)
+/******************************************************
+**  the 2s STATUS push
+**
+**  Called from the UI task's deadline housekeeping.  HELLO is no longer
+**  handled here: the link task sends it itself on the link-up edge, before
+**  anything queued behind it.  The chat lease still wins the link, so a
+**  STATUS never kicks a CHAT: reply out of the way.
+******************************************************/
+void Cloud_StatusTick(void)
 {
-    if (!ESP8266_IsReady())
-    {
-        s_cloud_was_up = 0;
-        return;
-    }
-    if (!s_cloud_was_up)
-    {
-        s_cloud_was_up = 1;
-        Cloud_Queue("HELLO");
-    }
-    /* 对话模式优先占用发送缓冲, 别把 CHAT: 上行挤掉 */
-    if (s_chat_mode || s_chat_busy) return;
-
-    if (s_cloud_pend_n)
-    {
-        if (ESP8266_SendText(s_cloud_pend[0]))
-        {
-            uint8_t i;
-            for (i = 1; i < s_cloud_pend_n; i++)
-                strcpy(s_cloud_pend[i - 1], s_cloud_pend[i]);
-            s_cloud_pend_n--;
-        }
-        return;
-    }
-
-    if (++s_cloud_div >= CLOUD_STATUS_TICKS)
-    {
-        s_cloud_div = 0;
-        Cloud_SendStatus();
-    }
+    if (s_chat_mode || g_chat_busy) return;
+    if (!g_link_up) return;
+    if (g_link_fetch) return;   /* the link is borrowed: do not spam q_link */
+    Cloud_SendStatus();
 }

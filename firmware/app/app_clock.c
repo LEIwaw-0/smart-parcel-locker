@@ -9,8 +9,8 @@
 **  Split out of the monolithic main.c; bodies are unchanged.
 ******************************************************/
 #include "app_clock.h"
-#include "app_ctx.h"
 #include "app_ui.h"       /* TitleBar_DrawLink */
+#include "app_rtos.h"     /* Clock_Task IPC + Lcd_Lock */
 #include "esp8266.h"
 #include "lcd.h"
 #include <stdio.h>
@@ -33,8 +33,13 @@ static char     s_wx_temp[8]  = "--";
 static char     s_wx_humi[8]  = "--";
 static char     s_wx_wind[16] = "";
 static char     s_wx_wlev[8]  = "";
-static uint32_t s_wx_next   = WX_FIRST_TICKS;
-static char     s_wx_rx[1100];
+/* ---- the weather HTTP body: the link task polls straight into this,
+        the clock task parses it out of here, so it is never copied ---- */
+static char s_wx_rx[1100];
+
+char *Clock_WxBuf(void)        { return s_wx_rx; }
+uint16_t Clock_WxBufSize(void) { return (uint16_t)sizeof(s_wx_rx); }
+
 
 static const char *const MON3[12] = {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -330,62 +335,110 @@ static void Clock_AddSecond(void)
         }
     }
 
-    /* the clock card only exists on the main screen */
-    if (s_state != ST_MENU || s_overlay) return;
+    /* the clock card only exists on the main screen (published by the UI
+       task into g_ui_screen after every event) */
+    if (!g_ui_screen) return;
     if (paint == 2) Clock_DrawCard();
     else            Clock_DrawTime();
 }
 
-void Clock_Weather_Tick(void)
+/******************************************************
+**  the clock task
+**
+**  Runs every 100ms.  It owns the wall clock (DWT cycles -> one second
+**  counter), keeps the title-bar link badge fresh while the main screen is
+**  up, and borrows the ESP8266 link once every ~180s for a weather fetch.
+**
+**  The fetch itself is a request / reply with the link task: Clock_Task
+**  posts an empty app_link_t with LK_FETCH and waits on q_clock for the
+**  outcome.  The HTTP body lands in Clock_WxBuf() (the link task polls
+**  straight into it), so nothing is copied.
+******************************************************/
+void Clock_Task(void *arg)
 {
-    uint32_t now = DWT->CYCCNT;
-    uint32_t dcyc = now - s_cyc_last;
-    uint8_t  r;
+    uint32_t next_ms  = (uint32_t)WX_FIRST_MS;  /* first fetch ~6s after boot */
+    uint32_t wait_ms  = 0;
+    uint8_t  inflight = 0;
+    uint8_t  res;
 
-    s_cyc_last = now;
-    if (dcyc > (CLK_CYC_PER_MS * 200u)) dcyc = CLK_CYC_PER_MS * 200u;
-    s_cyc_acc += dcyc;
-    /* one second = 168e6 cycles; the old threshold was one MILLISECOND,
-       which made the clock run 1000x too fast */
-    while (s_cyc_acc >= CLK_CYC_PER_SEC)
+    (void)arg;
+
+    for (;;)
     {
-        s_cyc_acc -= CLK_CYC_PER_SEC;
-        if (s_clk_valid) Clock_AddSecond();
-    }
+        uint32_t now_cyc = DWT->CYCCNT;
+        uint32_t dcyc    = now_cyc - s_cyc_last;
+        uint32_t now;
 
-
-    /* the title bar only exists on the main screen */
-    if (s_state == ST_MENU && !s_overlay) TitleBar_DrawLink();
-
-    r = ESP8266_FetchPoll(s_wx_rx, sizeof(s_wx_rx));
-
-    if (r == 1)
-    {
-        if (Clock_ParseDate(s_wx_rx)) Wx_Parse(s_wx_rx);
-        printf("WX: %04d-%02d-%02d %02d:%02d:%02d temp=%s humi=%s wind=%s %s\r\n",
-               (int)s_clk_year, (int)s_clk_mon, (int)s_clk_day,
-               (int)s_clk_hour, (int)s_clk_min, (int)s_clk_sec,
-               s_wx_temp, s_wx_humi, s_wx_wind, s_wx_wlev);
-        s_wx_next = WX_REFRESH_TICKS;
-        /* redraw only the two cards: a full Menu_Draw would freeze the UI */
-        if (s_state == ST_MENU && !s_overlay)
+        s_cyc_last = now_cyc;
+        if (dcyc > (CLK_CYC_PER_MS * 200u)) dcyc = CLK_CYC_PER_MS * 200u;
+        s_cyc_acc += dcyc;
+        /* one second = 168e6 cycles */
+        while (s_cyc_acc >= CLK_CYC_PER_SEC)
         {
-            Clock_DrawCard();
-            Wx_DrawCard();
+            s_cyc_acc -= CLK_CYC_PER_SEC;
+            if (s_clk_valid)
+            {
+                Lcd_Lock();
+                Clock_AddSecond();
+                Lcd_Unlock();
+            }
         }
-        return;
-    }
-    if (r == 2)
-    {
-        /* nothing on screen changed, so do not repaint at all */
-        printf("WX: fetch failed, retry in %us\r\n", (unsigned)(WX_RETRY_TICKS / 200u));
-        s_wx_next = WX_RETRY_TICKS;
-        return;
-    }
 
+        /* the title bar only exists on the main screen; TitleBar_DrawLink()
+           caches the badge text and returns immediately when unchanged */
+        if (g_ui_screen)
+        {
+            Lcd_Lock();
+            TitleBar_DrawLink();
+            Lcd_Unlock();
+        }
 
-    if (s_wx_next) s_wx_next--;
-    if (!s_wx_next && !ESP8266_FetchBusy() && !s_chat_mode)
-        s_wx_next = (ESP8266_FetchStart(WX_HOST, WX_PATH) == 0)
-                        ? WX_REFRESH_TICKS : WX_RETRY_TICKS;
+        /* --- weather fetch result --- */
+        if (xQueueReceive(q_clock, &res, 0) == pdTRUE)
+        {
+            inflight = 0;
+            if (res == 1)
+            {
+                if (Clock_ParseDate(s_wx_rx)) Wx_Parse(s_wx_rx);
+                printf("WX: %04d-%02d-%02d %02d:%02d:%02d temp=%s humi=%s wind=%s %s\r\n",
+                       (int)s_clk_year, (int)s_clk_mon, (int)s_clk_day,
+                       (int)s_clk_hour, (int)s_clk_min, (int)s_clk_sec,
+                       s_wx_temp, s_wx_humi, s_wx_wind, s_wx_wlev);
+                next_ms = App_Ms() + WX_REFRESH_MS;
+                /* redraw only the two cards: a full Menu_Draw would flash */
+                if (g_ui_screen)
+                {
+                    Lcd_Lock();
+                    Clock_DrawCard();
+                    Wx_DrawCard();
+                    Lcd_Unlock();
+                }
+            }
+            else
+            {
+                /* nothing on screen changed, so do not repaint at all */
+                printf("WX: fetch failed, retry in %us\r\n",
+                       (unsigned)(WX_RETRY_MS / 1000u));
+                next_ms = App_Ms() + WX_RETRY_MS;
+            }
+        }
+
+        /* --- ask the link task to borrow the link --- */
+        now = App_Ms();
+        if (!inflight && !g_chat_busy && !g_link_fetch && (int32_t)(now - next_ms) >= 0)
+        {
+            inflight = 1;
+            wait_ms  = now + 60000u;      /* the link task must answer in 60s */
+            App_FetchPost();
+        }
+        else if (inflight && (int32_t)(now - wait_ms) >= 0)
+        {
+            /* the link task is wedged (or the link never came up) */
+            inflight = 0;
+            next_ms  = now + WX_RETRY_MS;
+            printf("WX: fetch unanswered, retry\r\n");
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
 }

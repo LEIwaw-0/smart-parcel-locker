@@ -5,6 +5,7 @@
 ******************************************************/
 #include "app_flow.h"
 #include "app_ctx.h"
+#include "app_rtos.h"     /* App_Ms */
 #include "app_door.h"
 #include "app_ui.h"
 #include "app_voice.h"
@@ -70,23 +71,29 @@ void State_Menu(uint8_t td_held, uint16_t lx, uint16_t ly)
         return;
     }
 
-    /* ---- hidden entry: hold the title bar for 3 seconds ---- */
+    /* ---- hidden entry: hold the title bar for 3 seconds ----
+       The touch task re-announces a held finger every 50ms, so the progress
+       bar advances in 50ms steps; the start of the hold is remembered as a
+       timestamp so the 3s budget does not depend on the event cadence. */
     if (td_held && ly <= 35)
     {
         uint16_t w;
+        uint32_t held_ms;
         /* finger slid up from the PICKUP button: drop its latched press so
            releasing on the title bar does not fire a pickup */
         if (s_pick_pressed) { s_pick_pressed = 0; PickBtn_Draw(0); }
-        if (s_title_hold < TITLE_HOLD_TICKS) s_title_hold++;
+        if (s_title_hold == 0) s_title_hold = App_Ms();
+        held_ms = App_Ms() - s_title_hold;
+        if (held_ms > TITLE_HOLD_MS) held_ms = TITLE_HOLD_MS;
 
-        w = (uint16_t)((s_title_hold * (LCD_W - 1)) / TITLE_HOLD_TICKS);
+        w = (uint16_t)((held_ms * (LCD_W - 1)) / TITLE_HOLD_MS);
         if (w != s_title_w)
         {
             s_title_w = w;
             LCD_Fill(0, 34, w, 37, COLOR_YELLOW);
             if (w < LCD_W - 1) LCD_Fill((uint16_t)(w + 1), 34, LCD_W - 1, 37, COLOR_BG);
         }
-        if (s_title_hold >= TITLE_HOLD_TICKS)
+        if (held_ms >= TITLE_HOLD_MS)
         {
             s_title_hold = 0;
             s_title_w    = 0;
@@ -152,11 +159,7 @@ void State_DepositKeypad(uint8_t td_held, uint16_t lx, uint16_t ly)
             char msg[24];
             memcpy(s_res_code, out_code, CODE_LEN);
             s_res_code[CODE_LEN] = 0;
-            s_door_flow[box - 1]  = 1;
-            s_door_src[box - 1]   = SRC_TOUCH;
-            s_door_phase[box - 1] = DOOR_W_OPEN; s_door_open_tick[box - 1] = loop_tick;
-            s_door_db[box - 1]    = 0;
-            DoOpenBox(box, SRC_TOUCH);
+            DoOpenBox(box, SRC_TOUCH, 1);
             sprintf(msg, "deposit OK #%d code=%s", box, s_res_code);
             StatusBar_Set(SRC_TOUCH, box, msg);
             SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xC3\xC5\xD2\xD1\xBF\xAA\xC7\xEB\xCD\xB6\xBC\xFE");
@@ -205,11 +208,7 @@ void Kpad_DoPickup(void)
     if (box)
     {
         char msg[24];
-        s_door_flow[box - 1]  = 2;
-        s_door_src[box - 1]   = SRC_TOUCH;
-        s_door_phase[box - 1] = DOOR_W_OPEN; s_door_open_tick[box - 1] = loop_tick;
-        s_door_db[box - 1]    = 0;
-        DoOpenBox(box, SRC_TOUCH);
+        DoOpenBox(box, SRC_TOUCH, 2);
         sprintf(msg, "pickup OK #%d", box);
         StatusBar_Set(SRC_TOUCH, box, msg);
         SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xC3\xC5\xD2\xD1\xBF\xAA\xC7\xEB\xC8\xA1\xBC\xFE");

@@ -11,13 +11,10 @@
 **
 **  Only genuinely cross-module variables live here; anything a
 **  single module owns stayed private static inside that module
-**  (see s_last_msg / s_clk_* / s_cloud_* / s_door_band_* below).
+**  (see s_last_msg / s_clk_* / s_wx_* / s_band_* below).
 ******************************************************/
 #include "app_config.h"
 #include "button.h"     /* Button_t */
-
-/* main-loop counter, one tick ~5ms */
-extern uint32_t loop_tick;
 
 /* UI state machine (ST_*) and the overlay flag */
 extern uint8_t  s_state;
@@ -40,7 +37,6 @@ extern uint8_t  s_pick_pressed;
 extern char     s_vpart[7];
 extern uint8_t  s_vplen;
 extern uint8_t  s_voice_pending;     /* 1 = waiting for the dui/cuo answer  */
-extern uint8_t  s_voice_seen;        /* 1 = any LD3320 byte received        */
 
 /* pickup keypad: 1 = 6 digits filled, waiting for confirm */
 extern uint8_t  s_kpad_confirm;
@@ -50,12 +46,8 @@ extern uint8_t  s_chat_mode;
 extern uint8_t  s_chat_busy;
 extern uint32_t s_chat_tick;
 
-/* per-box door tracking driven by the PCF8574 feedback nibble */
-extern uint8_t  s_door_phase[BOX_COUNT];     /* IDLE / W_OPEN / W_CLOSE / DONE */
-extern uint8_t  s_door_flow[BOX_COUNT];      /* 1 = deposit, 2 = pickup        */
-extern uint8_t  s_door_src[BOX_COUNT];       /* status-bar source tag          */
-extern uint8_t  s_door_db[BOX_COUNT];        /* stable-reading counter         */
-extern uint32_t s_door_open_tick[BOX_COUNT]; /* loop_tick when the box opened  */
+/* The per-box door state now lives inside app_door.c (single writer: the
+   door task) and reaches the screen through Door_ShadowSet() below. */
 
 /* Chinese digits for the conversational TTS readback (GBK literals) */
 extern const char *const cn_digit[10];

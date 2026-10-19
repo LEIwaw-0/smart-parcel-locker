@@ -1,17 +1,28 @@
+/******************************************************
+**  ST7796S 4.0英寸SPI液晶屏驱动 (软件SPI)
+**  芯片: ST7796S, 480x320分辨率, RGB565
+**  引脚: CS=PA4 DC=PB0 RST=PB1 BLK=PB2
+**        SCK=PA5 MISO=PA6 MOSI=PA7
+**  移植自厂家 Demo_STM32F407ZGT6_Software_SPI/LCD/lcd.c
+******************************************************/
 #include "lcd.h"
 #include "delay.h"
 #include "font.h"
 
+/* ---------------- 引脚定义宏 ---------------- */
 #define LCD_CS(x)    GPIO_WriteBit(GPIOA, GPIO_Pin_4, (BitAction)(x))
 #define LCD_DC(x)    GPIO_WriteBit(GPIOB, GPIO_Pin_0, (BitAction)(x))
 #define LCD_RST(x)   GPIO_WriteBit(GPIOB, GPIO_Pin_1, (BitAction)(x))
 #define LCD_BLK(x)   GPIO_WriteBit(GPIOB, GPIO_Pin_2, (BitAction)(x))
 
+/* 软件SPI引脚宏 */
 #define LCD_SCK(x)   GPIO_WriteBit(GPIOA, GPIO_Pin_5, (BitAction)(x))
 #define LCD_MOSI(x)  GPIO_WriteBit(GPIOA, GPIO_Pin_7, (BitAction)(x))
 #define LCD_MISO()   GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_6)
 
+/* 默认显示方向: MADCTL=0x68 */
 
+/* ---------------- 软件SPI (移植自厂家SPIv_WriteData) ---------------- */
 static void LCD_SPI_Wr(uint8_t d)
 {
     uint8_t i;
@@ -20,7 +31,7 @@ static void LCD_SPI_Wr(uint8_t d)
         LCD_MOSI((d & 0x80) ? 1 : 0);
         d <<= 1;
         LCD_SCK(0);
-        LCD_SCK(1);   
+        LCD_SCK(1);   /* 上升沿采样 */
     }
 }
 
@@ -37,10 +48,11 @@ static uint8_t LCD_SPI_Rd(void)
     return d;
 }
 
+/* ---------------- 命令/数据写 (移植自厂家LCD_WR_REG/LCD_WR_DATA) ---------------- */
 void LCD_WriteCmd(uint8_t cmd)
 {
     LCD_CS(0);
-    LCD_DC(0);      
+    LCD_DC(0);      /* DC=0 表示命令 */
     LCD_SPI_Wr(cmd);
     LCD_CS(1);
 }
@@ -48,17 +60,19 @@ void LCD_WriteCmd(uint8_t cmd)
 void LCD_WriteData(uint8_t d)
 {
     LCD_CS(0);
-    LCD_DC(1);      
+    LCD_DC(1);      /* DC=1 表示数据 */
     LCD_SPI_Wr(d);
     LCD_CS(1);
 }
 
+/* ---------------- GPIO初始化 ---------------- */
 static void LCD_GPIO_Init(void)
 {
     GPIO_InitTypeDef g;
 
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB, ENABLE);
 
+    /* PB0=DC PB1=RST PB2=BLK 输出推挽 */
     g.GPIO_Pin   = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2;
     g.GPIO_Mode  = GPIO_Mode_OUT;
     g.GPIO_OType = GPIO_OType_PP;
@@ -66,20 +80,24 @@ static void LCD_GPIO_Init(void)
     g.GPIO_PuPd  = GPIO_PuPd_UP;
     GPIO_Init(GPIOB, &g);
 
+    /* PA4=CS PA5=SCK PA7=MOSI 输出推挽 */
     g.GPIO_Pin   = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_7;
     GPIO_Init(GPIOA, &g);
 
+    /* PA6=MISO 输入上拉 */
     g.GPIO_Pin  = GPIO_Pin_6;
     g.GPIO_Mode = GPIO_Mode_IN;
     g.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_Init(GPIOA, &g);
 
+    /* 空闲状态 */
     LCD_CS(1);
     LCD_DC(1);
     LCD_SCK(0);
     LCD_MOSI(0);
 }
 
+/* ---------------- 硬件复位 (移植自厂家LCD_RESET) ---------------- */
 static void LCD_Reset(void)
 {
     LCD_RST(0);
@@ -88,16 +106,18 @@ static void LCD_Reset(void)
     delay_ms(50);
 }
 
+/* ---------------- ST7796S初始化 (移植自厂家官方代码) ---------------- */
 void LCD_Init(void)
 {
     LCD_GPIO_Init();
     LCD_Reset();
 
-    LCD_WriteCmd(0xF0); LCD_WriteData(0xC3);   
-    LCD_WriteCmd(0xF0); LCD_WriteData(0x96);   
+    /* ===== ST7796S初始化序列 (按原厂，一步一步来) ===== */
+    LCD_WriteCmd(0xF0); LCD_WriteData(0xC3);   /* 命令扩展2 partI */
+    LCD_WriteCmd(0xF0); LCD_WriteData(0x96);   /* 命令扩展2 partII */
 
-    LCD_WriteCmd(0x36); LCD_WriteData(0x68);   
-    LCD_WriteCmd(0x3A); LCD_WriteData(0x05);   
+    LCD_WriteCmd(0x36); LCD_WriteData(0x68);   /* MADCTL初始值 */
+    LCD_WriteCmd(0x3A); LCD_WriteData(0x05);   /* 数据格式: 16位RGB565 */
 
     LCD_WriteCmd(0xB0); LCD_WriteData(0x80);
     LCD_WriteCmd(0xB6); LCD_WriteData(0x00); LCD_WriteData(0x02);
@@ -111,37 +131,40 @@ void LCD_Init(void)
     LCD_WriteData(0x40); LCD_WriteData(0x8A); LCD_WriteData(0x00); LCD_WriteData(0x00);
     LCD_WriteData(0x29); LCD_WriteData(0x19); LCD_WriteData(0xA5); LCD_WriteData(0x33);
 
-    LCD_WriteCmd(0xC2);   
-    LCD_WriteCmd(0xA7);   
+    LCD_WriteCmd(0xC2);   /* 无参数命令 */
+    LCD_WriteCmd(0xA7);   /* 无参数命令 */
 
+    /* 正gamma校正 */
     LCD_WriteCmd(0xE0);
     LCD_WriteData(0xF0); LCD_WriteData(0x09); LCD_WriteData(0x13); LCD_WriteData(0x12);
     LCD_WriteData(0x12); LCD_WriteData(0x2B); LCD_WriteData(0x3C); LCD_WriteData(0x44);
     LCD_WriteData(0x4B); LCD_WriteData(0x1B); LCD_WriteData(0x18); LCD_WriteData(0x17);
     LCD_WriteData(0x1D); LCD_WriteData(0x21);
 
+    /* 负gamma校正 */
     LCD_WriteCmd(0xE1);
     LCD_WriteData(0xF0); LCD_WriteData(0x09); LCD_WriteData(0x13); LCD_WriteData(0x0C);
     LCD_WriteData(0x0D); LCD_WriteData(0x27); LCD_WriteData(0x3B); LCD_WriteData(0x44);
     LCD_WriteData(0x4D); LCD_WriteData(0x0B); LCD_WriteData(0x17); LCD_WriteData(0x17);
     LCD_WriteData(0x1D); LCD_WriteData(0x21);
 
-    LCD_WriteCmd(0x36); LCD_WriteData(0xEC);   
-    LCD_WriteCmd(0xF0); LCD_WriteData(0xC3);   
-    LCD_WriteCmd(0xF0); LCD_WriteData(0x69);   
+    LCD_WriteCmd(0x36); LCD_WriteData(0xEC);   /* MADCTL第二次写 */
+    LCD_WriteCmd(0xF0); LCD_WriteData(0xC3);   /* 命令扩展partI 恢复原值(实测才work) */
+    LCD_WriteCmd(0xF0); LCD_WriteData(0x69);   /* 命令扩展2 partII */
 
-    LCD_WriteCmd(0x13);   
-    LCD_WriteCmd(0x11);   
+    LCD_WriteCmd(0x13);   /* 进入正常显示模式 */
+    LCD_WriteCmd(0x11);   /* 退出睡眠 */
     delay_ms(120);
-    LCD_WriteCmd(0x29);   
+    LCD_WriteCmd(0x29);   /* 开显示 */
     delay_ms(20);
 
-    LCD_BLK(1);                        
-    LCD_Clear(COLOR_WHITE);           
+    LCD_BLK(1);                        /* 开背光 */
+    LCD_Clear(COLOR_WHITE);           /* 先清一次屏(0xEC方向, 等display on稳定) */
 
+    /* 行列：480x320 需在0x29稳定后写0x36，否则MV位异常导致地址错位 */
     LCD_WriteCmd(0x36); LCD_WriteData(0x28);
     delay_ms(20);
-    LCD_Clear(COLOR_WHITE);           
+    LCD_Clear(COLOR_WHITE);           /* 方向修正后再次清屏 */
 }
 
 uint16_t LCD_ReadID(void)
@@ -159,26 +182,29 @@ uint16_t LCD_ReadID(void)
     return id;
 }
 
+/* ---------------- 背光控制 ---------------- */
 void LCD_Backlight(uint8_t on)
 {
     LCD_BLK(on ? 1 : 0);
 }
 
+/* ---------------- 设置显示区域 (移植自厂家LCD_SetWindows) ---------------- */
 void LCD_SetWindow(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 {
-    LCD_WriteCmd(0x2A);   
+        LCD_WriteCmd(0x2A);   /* 列地址设置 */
     LCD_WriteData((uint8_t)(x1 >> 8));
     LCD_WriteData((uint8_t)(x1 & 0xFF));
     LCD_WriteData((uint8_t)(x2 >> 8));
     LCD_WriteData((uint8_t)(x2 & 0xFF));
-    LCD_WriteCmd(0x2B);   
+    LCD_WriteCmd(0x2B);   /* 行地址设置 */
     LCD_WriteData((uint8_t)(y1 >> 8));
     LCD_WriteData((uint8_t)(y1 & 0xFF));
     LCD_WriteData((uint8_t)(y2 >> 8));
     LCD_WriteData((uint8_t)(y2 & 0xFF));
-    LCD_WriteCmd(0x2C);   /* дGRAM */
+    LCD_WriteCmd(0x2C);   /* 写GRAM */
 }
 
+/* ---------------- 画点 ---------------- */
 void LCD_DrawPoint(uint16_t x, uint16_t y, uint16_t color)
 {
     if (x >= LCD_W || y >= LCD_H) return;
@@ -189,11 +215,13 @@ void LCD_DrawPoint(uint16_t x, uint16_t y, uint16_t color)
     LCD_CS(1);
 }
 
+/* ---------------- 清屏 ---------------- */
 void LCD_Clear(uint16_t color)
 {
     LCD_Fill(0, 0, LCD_W - 1, LCD_H - 1, color);
 }
 
+/* ---------------- 区域填充 (连续写, 不每个点翻转CS) ---------------- */
 void LCD_Fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color)
 {
     uint32_t n;
@@ -211,6 +239,7 @@ void LCD_Fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color
     LCD_CS(1);
 }
 
+/* ---------------- 画线 (Bresenham算法) ---------------- */
 void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color)
 {
     int16_t dx = (x2 > x1) ? (int16_t)(x2 - x1) : (int16_t)(x1 - x2);
@@ -229,6 +258,7 @@ void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c
     }
 }
 
+/* ---------------- 画矩形框 ---------------- */
 void LCD_DrawRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color)
 {
     LCD_DrawLine(x1, y1, x2, y1, color);
@@ -237,6 +267,7 @@ void LCD_DrawRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c
     LCD_DrawLine(x1, y2, x1, y1, color);
 }
 
+/* ---------------- 画圆 (中点画圆法) ---------------- */
 void LCD_DrawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color)
 {
     int32_t f = 1 - r;
@@ -258,6 +289,8 @@ void LCD_DrawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color)
     }
 }
 
+/* ---------------- 显示单个字符 (5x7字库, 列扫描, bit0在上) ---------------- */
+/* size: 1=6x8原始, 2=12x16放大2倍 */
 void LCD_ShowChar(uint16_t x, uint16_t y, char ch, uint16_t fc, uint16_t bc, uint8_t size)
 {
     uint8_t  s = (size >= 2) ? 2 : 1;
@@ -270,16 +303,18 @@ void LCD_ShowChar(uint16_t x, uint16_t y, char ch, uint16_t fc, uint16_t bc, uin
     if (ch < ' ' || ch > '~') ch = '?';
     f = &ASCII5x7[(ch - ' ') * 5];
 
+    /* 先构造像素缓冲区 (按行扫描) */
     for (row = 0; row < 8; row++) {
         for (k = 0; k < s; k++) {
             for (col = 0; col < 5; col++) {
                 uint16_t c = ((f[col] >> row) & 0x01) ? fc : bc;
                 for (t = 0; t < s; t++) buf[i++] = c;
             }
-            for (t = 0; t < s; t++) buf[i++] = bc;  
+            for (t = 0; t < s; t++) buf[i++] = bc;  /* 字符间距1列 */
         }
     }
 
+    /* 连续写入像素 (CS保持低电平写完整个字符) */
     LCD_SetWindow(x, y, (uint16_t)(x + 6 * s - 1), (uint16_t)(y + 8 * s - 1));
     LCD_CS(0); LCD_DC(1);
     for (i = 0; i < len; i++) {
@@ -289,6 +324,7 @@ void LCD_ShowChar(uint16_t x, uint16_t y, char ch, uint16_t fc, uint16_t bc, uin
     LCD_CS(1);
 }
 
+/* ---------------- 显示字符串 ---------------- */
 void LCD_ShowString(uint16_t x, uint16_t y, const char *s, uint16_t fc, uint16_t bc, uint8_t size)
 {
     uint8_t w = (size >= 2) ? 12 : 6;

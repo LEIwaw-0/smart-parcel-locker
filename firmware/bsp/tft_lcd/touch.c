@@ -10,6 +10,7 @@
 ******************************************************/
 #include "touch.h"
 #include "delay.h"
+#include "app_rtos.h"     /* Touch_Task: App_UiPost + App_Ms */
 
 /* ---------------- 引脚操作 ---------------- */
 #define T_CS(x)    GPIO_WriteBit(GPIOA, GPIO_Pin_0, (BitAction)(x))
@@ -177,4 +178,63 @@ uint8_t Touch_Scan(uint16_t *sx, uint16_t *sy, uint16_t *rx, uint16_t *ry)
     *sx = (uint16_t)vx;
     *sy = (uint16_t)vy;
     return 1;
+}
+
+/* ==================== FreeRTOS 触摸任务 ====================
+ * 原来主循环里"Touch_Scan + 消抖 + 状态机分发"是每 5ms 走一遍的；
+ * 这里只保留采样/消抖并把结果投递出去，状态机由 UI 任务处理。
+ *
+ * 按下期间每 TOUCH_REPEAT_MS 复投一次 td_held=1: 标题栏的 3s 长按是靠
+ * State_Menu 被逐次调用累加 s_title_hold 实现的, 手指划出按钮后也必须
+ * 再收到一次 td_held=1 才能发现解绑。
+ */
+static void Touch_Post(uint8_t held, uint16_t x, uint16_t y)
+{
+    app_evt_t ev;
+    ev.kind    = EV_TOUCH;
+    ev.a       = held;
+    ev.b       = 0;
+    ev.c       = 0;
+    ev.x       = x;
+    ev.y       = y;
+    ev.text[0] = 0;
+    App_UiPost(&ev);
+}
+
+void Touch_Task(void *arg)
+{
+    uint16_t lx = 0, ly = 0, rx = 0, ry = 0;
+    uint8_t  td;
+    uint8_t  td_held   = 0;
+    uint8_t  press_cnt = 0;
+    uint8_t  rel_cnt   = 0;
+    uint32_t last_rep  = 0;
+
+    (void)arg;
+
+    for (;;)
+    {
+        td = Touch_Scan(&lx, &ly, &rx, &ry);
+        if (td) { if (press_cnt < 255) press_cnt++; rel_cnt = 0; }
+        else    { if (rel_cnt   < 255) rel_cnt++;   press_cnt = 0; }
+
+        if (!td_held && press_cnt >= 2) { td_held = 1; last_rep = 0; }
+
+        if (td_held && rel_cnt >= 4)
+        {
+            td_held = 0;
+            Touch_Post(0, lx, ly);
+        }
+        else if (td_held &&
+                 (last_rep == 0 ||
+                  (int32_t)(App_Ms() - last_rep) >= (int32_t)TOUCH_REPEAT_MS))
+        {
+            last_rep = App_Ms();
+            Touch_Post(1, lx, ly);
+        }
+
+        if (!td_held) last_rep = 0;
+
+        vTaskDelay(pdMS_TO_TICKS(TOUCH_SAMPLE_MS));
+    }
 }

@@ -10,11 +10,10 @@
 **  adequate for a 4-box parcel locker.
 ******************************************************/
 #include "codebox.h"
+#include "delay.h"
 #include "stm32f4xx_flash.h"
 #include <stdio.h>
 #include <string.h>
-
-extern uint32_t loop_tick;
 
 #define CODEBOX_FLASH_ADDR   0x080E0000UL
 #define CODEBOX_SECTOR       FLASH_Sector_11
@@ -45,7 +44,7 @@ static void gen_code(const uint8_t phone[PHONE_LEN], uint8_t box_id,
     uint32_t seed = 0x12345678UL;
     for (i = 0; i < PHONE_LEN; i++)
         seed = seed * 131 + (uint32_t)phone[i];
-    seed = seed * 257 + (uint32_t)box_id + loop_tick;
+    seed = seed * 257 + (uint32_t)box_id + Delay_CycNow();
     if (seed == 0) seed = 0x55AA55AA;
     g_lfsr = seed;
     for (i = 0; i < CODE_LEN; i++)

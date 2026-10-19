@@ -1,13 +1,21 @@
 /******************************************************
 **  app_voice.c - LD3320 voice front end and the AI chat mode.
 **
-**  Split out of the monolithic main.c; bodies are unchanged.
+**  Voice_Task() is a thin demux: it polls the LD3320 driver and republishes
+**  every one-shot event as an EV_VOICE message on q_ui.  Everything that
+**  reacts to voice (the keypad, the state machine, the status bar, the TTS)
+**  belongs to the UI task and runs in Voice_ApplyEvt().
+**
+**  Split out of the monolithic main.c; the decision logic is unchanged.
 ******************************************************/
 #include "app_voice.h"
 #include "app_ctx.h"
+#include "app_rtos.h"
+#include "app_cloud.h"    /* Cloud_Queue */
 #include "app_door.h"     /* DoOpenBox */
 #include "app_ui.h"
 #include "codebox.h"
+#include "ld3320.h"
 #include "esp8266.h"
 #include "keypad.h"
 #include "syn6288.h"
@@ -41,18 +49,11 @@ void Voice_HandleCode(const char *code6)
     uint8_t i;
     char msg[24];
 
-
-
-
-
-
-
-
     /* de-dup: same code within 8s is treated as a repeat (TTS self-heard,
        STC11 retry, double utterance) */
     if (s_last_vtick != 0xFFFFFFFFu &&
         strncmp(s_last_vcode, code6, 6) == 0 &&
-        (loop_tick - s_last_vtick) < VOICE_DEDUP_TICKS)
+        (App_Ms() - s_last_vtick) < VOICE_DEDUP_MS)
     {
         printf("[VOICE] dup %s\r\n", code6);
         return;
@@ -79,19 +80,15 @@ void Voice_HandleCode(const char *code6)
 
     s_res_box  = box;
     s_res_ok   = 1;
-    s_door_flow[box - 1]  = 2;
-    s_door_src[box - 1]   = SRC_VOICE;
-    s_door_phase[box - 1] = DOOR_W_OPEN; s_door_open_tick[box - 1] = loop_tick;
-    s_door_db[box - 1]    = 0;
 
     strncpy(s_last_vcode, code6, 6);
     s_last_vcode[6] = 0;
-    s_last_vtick = loop_tick;
+    s_last_vtick = App_Ms();
 
     sprintf(msg, "box=%d", box);
     StatusBar_Set(SRC_VOICE, box, msg);
 
-    DoOpenBox(box, SRC_VOICE);
+    DoOpenBox(box, SRC_VOICE, 2);
     SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xC3\xC5\xD2\xD1\xBF\xAA\xC7\xEB\xC8\xA1\xBC\xFE");
     s_overlay = 0;
     s_chat_mode = 0;
@@ -205,7 +202,7 @@ void Voice_HandleChatWake(void)
 {
     s_chat_mode = 1;
     s_chat_busy = 0;
-    s_chat_tick = loop_tick;
+    s_chat_tick = App_Ms();
     StatusBar_Set(SRC_VOICE, 0, "\xB6\xD4\xBB\xB0\xC4\xA3\xCA\xBD \xCB\xB5\xD0\xA1\xD6\xC7\xCC\xE1\xCE\xCA");
     SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xC4\xE3\xBA\xC3\xCE\xD2\xD4\xDA\xC7\xEB\xCC\xE1\xCE\xCA");
     if (s_state == ST_MENU) {
@@ -224,7 +221,7 @@ void Chat_HandleKeyword(uint8_t code)
     for (i = 0; i < CHAT_KW_COUNT; i++)
         if (s_chat_table[i].code == code) { text = s_chat_table[i].text; break; }
     if (!text) { printf("[CHAT] unknown code=%d\r\n", code); return; }
-    s_chat_tick = loop_tick;
+    s_chat_tick = App_Ms();
     printf("[CHAT] kw[%d]:%s\r\n", code, text);
 
     /* special keyword: "取" jumps straight to the pickup keypad */
@@ -243,22 +240,20 @@ void Chat_HandleKeyword(uint8_t code)
     strcpy(sendbuf, "CHAT:");
     strcat(sendbuf, text);
     strcat(sendbuf, "\n");
-    if (ESP8266_IsReady() && !s_chat_busy)
+    if (g_link_up && !s_chat_busy)
     {
-        if (ESP8266_SendText(sendbuf))
-        {
-            s_chat_busy = 1;
-            StatusBar_Set(SRC_VOICE, 0, "\xC7\xEB\xCA\xE4\xC8\xEB");
-            if (s_state == ST_MENU) Menu_DrawVoxHint(text);
-        }
-        else SYN_FrameInfo(0, (uint8_t *)"[v8][t5][m0]\xCD\xF8\xC2\xE7\xB7\xB1\xC3\xA6\xC7\xEB\xC9\xD4\xBA\xF2");
+        /* hand the line to the link task; it owns the ESP8266 send buffer */
+        Cloud_Queue(sendbuf);
+        s_chat_busy = 1;
+        StatusBar_Set(SRC_VOICE, 0, "\xC7\xEB\xCA\xE4\xC8\xEB");
+        if (s_state == ST_MENU) Menu_DrawVoxHint(text);
     }
     else
     {
         strcpy(tts, "[v8][t5][m0]");
         strcat(tts, s_chat_table[i].reply);
         if (s_chat_table[i].reply[0]) SYN_FrameInfo(0, (uint8_t *)tts);
-        if (!ESP8266_IsReady()) StatusBar_Set(SRC_VOICE, 0, "\xCE\xB4\xC1\xAC\xCD\xF8\xB6\xD4\xBB\xB0\xC4\xA3\xCA\xBD");
+        if (!g_link_up) StatusBar_Set(SRC_VOICE, 0, "\xCE\xB4\xC1\xAC\xCD\xF8\xB6\xD4\xBB\xB0\xC4\xA3\xCA\xBD");
     }
 }
 
@@ -296,4 +291,165 @@ void Voice_TouchReset(void)
     s_vpart[6] = 0;
     Guide_ShowPartial();
     StatusBar_Set(SRC_TOUCH, 0, "\xD2\xD1\xD6\xD8\xCA\xE4");
+}
+
+/******************************************************
+**  the voice task
+**
+**  A pure demux.  The LD3320 driver keeps one-shot flags; this task polls
+**  them every 5ms, echoes every raw line on USART1 for wiring checks and
+**  republishes each event as an EV_VOICE message.  Nothing is decided here:
+**  the UI task knows which screen is up and applies the event.
+**
+**  Only ONE of the action flags is consumed per iteration - that is the
+**  old superloop's if/else chain, kept bit-for-bit.
+******************************************************/
+void Voice_Task(void *arg)
+{
+    app_evt_t ev;
+
+    (void)arg;
+
+    for (;;)
+    {
+        char    raw[24];
+        char    code[7];
+        uint8_t didx, dval, ccode;
+        int     cmd;
+
+        ev.kind = EV_VOICE;
+        ev.b = 0; ev.c = 0; ev.x = 0; ev.y = 0; ev.text[0] = 0;
+
+        /* a) echo EVERY raw line so wiring/firmware can be checked */
+        if (LD3320_GetRaw(raw, sizeof(raw)))
+        {
+            uint8_t show;
+
+            g_voice_seen = 1;
+            printf("[LD3320] ");
+            if (strncmp(raw, "DIGIT:", 6) == 0)
+                printf("digit pos=%d val=%c", (int)(raw[6]-'0')+1, raw[12]);
+            else if (strncmp(raw, "CMD:00", 6) == 0)
+                printf("CMD:00 wake");
+            else if (strncmp(raw, "CMD:FE", 6) == 0)
+                printf("CMD:FE timeout");
+            else if (strncmp(raw, "CHAT:WAKE", 9) == 0)
+                printf("CHAT:WAKE");
+            else if (strncmp(raw, "CHAT:", 5) == 0)
+                printf("CHAT 0x%02X%02X", raw[5], raw[6]);
+            else if (strncmp(raw, "PCODE:", 6) == 0)
+                printf("PCODE %s", raw+6);
+            else if (strncmp(raw, "CODE:", 5) == 0)
+                printf("CODE %s", raw+5);
+            else if (strncmp(raw, "RETRY", 5) == 0)
+                printf("RETRY");
+            else if (strncmp(raw, "UNDO", 4) == 0)
+                printf("UNDO");
+            else if (strncmp(raw, "HB", 2) == 0)
+                printf("HB");
+            else if (strncmp(raw, "LD-DIGIT", 8) == 0)
+                printf("\xC4\xA3\xBF\xE9\xBE\xCD\xD0\xF7");
+            else if (strncmp(raw, "LD_OK", 5) == 0)
+                printf("\xD7\xD4\xBC\xEC\xCD\xA8\xB9\xFD %s", raw+5);
+            else if (strncmp(raw, "LD_ERR", 6) == 0)
+                printf("\xD7\xD4\xBC\xEC\xCA\xA7\xB0\xDC");
+            else
+                printf("%s", raw);
+            printf("\r\n");
+
+            /* boot beacons/selftest lines go to serial only; only
+               recognition results are shown on the menu hint line */
+            show = (strncmp(raw, "LD3320", 6) != 0 &&
+                    strncmp(raw, "LD-DIGIT", 8) != 0 &&
+                    strncmp(raw, "LD_OK",  5) != 0 &&
+                    strncmp(raw, "LD_ERR", 6) != 0 &&
+                    strncmp(raw, "PCODE:", 6) != 0 &&  /* dedicated panel */
+                    strncmp(raw, "RETRY",  5) != 0 &&   /* dedicated panel */
+                    strncmp(raw, "HB",     2) != 0);    /* heartbeat: serial only */
+            if (show)
+            {
+                ev.a = VS_RAW;
+                if (strncmp(raw, "DIGIT:", 6) == 0)
+                {
+                    /* digit capture progress: "DIGIT:n VAL:x" */
+                    uint8_t idx = (uint8_t)(raw[6] - '0');   /* 0..5 */
+                    char    val = raw[12];                   /* value digit */
+                    sprintf(ev.text, "%d:%c", (int)(idx + 1), val);
+                    ev.b = 1;                                /* keep ~5s */
+                }
+                else
+                {
+                    strncpy(ev.text, raw, APP_EV_TEXT_MAX - 1);
+                    ev.text[APP_EV_TEXT_MAX - 1] = 0;
+                }
+                App_UiPost(&ev);
+            }
+        }
+
+        /* b) chat-mode wake ("xiao zhi") */
+        if (LD3320_GetChatWake())
+        {
+            ev.a = VS_CHAT_WAKE;
+            ev.b = 0;
+            ev.c = 0;
+            ev.text[0] = 0;
+            App_UiPost(&ev);
+        }
+
+        /* c) one-shot voice actions */
+        if (LD3320_GetDigit(&didx, &dval))
+        {
+            ev.a = VS_DIGIT;
+            ev.b = didx;
+            ev.c = dval;
+            ev.text[0] = 0;
+            App_UiPost(&ev);
+        }
+        else if (LD3320_GetUndo())
+        {
+            ev.a = VS_UNDO;
+            ev.b = 0; ev.c = 0; ev.text[0] = 0;
+            App_UiPost(&ev);
+        }
+        else if (LD3320_GetPendingCode(code))
+        {
+            ev.a = VS_PENDING;
+            ev.b = 0; ev.c = 0;
+            strncpy(ev.text, code, APP_EV_TEXT_MAX - 1);
+            ev.text[APP_EV_TEXT_MAX - 1] = 0;
+            App_UiPost(&ev);
+        }
+        else if (LD3320_GetRetry())
+        {
+            ev.a = VS_RETRY;
+            ev.b = 0; ev.c = 0; ev.text[0] = 0;
+            App_UiPost(&ev);
+        }
+        else if (LD3320_GetCode(code))
+        {
+            ev.a = VS_CODE;
+            ev.b = 0; ev.c = 0;
+            strncpy(ev.text, code, APP_EV_TEXT_MAX - 1);
+            ev.text[APP_EV_TEXT_MAX - 1] = 0;
+            App_UiPost(&ev);
+        }
+        else if ((cmd = LD3320_GetCmd()) >= 0)
+        {
+            ev.a = VS_CMD;
+            ev.b = (uint8_t)cmd;
+            ev.c = 0; ev.text[0] = 0;
+            App_UiPost(&ev);
+        }
+
+        /* d) chat keyword */
+        if (LD3320_GetChat(&ccode))
+        {
+            ev.a = VS_CHAT;
+            ev.b = ccode;
+            ev.c = 0; ev.text[0] = 0;
+            App_UiPost(&ev);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(5));
+    }
 }

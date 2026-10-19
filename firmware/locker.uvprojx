@@ -365,7 +365,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>.\app;.\driver;.\bsp\tft_lcd;.\bsp\ld3320;.\bsp\syn6288;.\bsp\delay;.\bsp\usart;D:\Keil\ARM\Pack\Keil\STM32F4xx_DFP\1.0.8\Device\StdPeriph_Driver\inc</IncludePath>
+              <IncludePath>.\app;.\driver;.\bsp\tft_lcd;.\bsp\ld3320;.\bsp\syn6288;.\bsp\delay;.\bsp\usart;.\freertos\include;.\freertos\portable\RVDS\ARM_CM4F;D:\Keil\ARM\Pack\Keil\STM32F4xx_DFP\1.0.8\Device\StdPeriph_Driver\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -448,6 +448,26 @@
               <FileType>1</FileType>
               <FilePath>.\app\app_flow.c</FilePath>
               </File>
+              <File>
+              <FileName>hooks.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\hooks.c</FilePath>
+              </File>
+              <File>
+              <FileName>app_rtos.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\app_rtos.c</FilePath>
+              </File>
+              <File>
+              <FileName>app_ui_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\app_ui_task.c</FilePath>
+              </File>
+              <File>
+              <FileName>app_link.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\app_link.c</FilePath>
+              </File>
           </Files>
         </Group>
         <Group>
@@ -527,6 +547,36 @@
               <FileName>usart.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\bsp\usart\usart.c</FilePath>
+              </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>freertos</GroupName>
+          <Files>
+              <File>
+              <FileName>tasks.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\freertos\tasks.c</FilePath>
+              </File>
+              <File>
+              <FileName>list.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\freertos\list.c</FilePath>
+              </File>
+              <File>
+              <FileName>queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\freertos\queue.c</FilePath>
+              </File>
+              <File>
+              <FileName>port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\freertos\portable\RVDS\ARM_CM4F\port.c</FilePath>
+              </File>
+              <File>
+              <FileName>heap_4.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\freertos\portable\MemMang\heap_4.c</FilePath>
               </File>
           </Files>
         </Group>

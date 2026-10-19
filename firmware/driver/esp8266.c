@@ -1,13 +1,25 @@
+/**
+  ******************************************************************************
+  * @file    esp8266.c
+  * @brief   ESP8266 WiFi模块 AT指令驱动 (STM32F407, USART3 PB10/PB11)
+  *
+  *          非阻塞状态机，由主循环调用 ESP8266_Tick() 驱动。
+  *          接收端为中断驱动：普通AT响应按行解析；
+  *          "+IPD,<长度>:<数据>" 载荷按长度提取，确保中继服务器的
+  *          回复（可能包含\r\n）被完整捕获。
+  */
 #include "esp8266.h"
 #include "usart.h"
 #include <string.h>
 #include <stdio.h>
 
-#define ESP_USART   USART3              
-#define ESP_LINE_LEN 128                
-#define ESP_IPD_LEN  2048
-#define ESP_SEND_LEN 256                
+/* ======================== 宏定义 ======================== */
+#define ESP_USART   USART3              /* 使用的串口 */
+#define ESP_LINE_LEN 128                /* 单行最大长度 */
+#define ESP_IPD_LEN  2048               /* IPD数据最大长度 */
+#define ESP_SEND_LEN 256                /* 发送缓冲区最大长度 */
 
+/* ======================== 连接状态枚举 ======================== */
 typedef enum {
     ES_INIT = 0,        /* 发送AT，等待OK                        */
     ES_ATE0,            /* 发送ATE0，关闭回显                     */
@@ -24,31 +36,44 @@ typedef enum {
     ES_OFFLINE          /* WiFi连接失败，停止重试，保持离线         */
 } esp_state_t;
 
-static volatile esp_state_t s_state = ES_INIT;  
-static volatile uint32_t    s_tick  = 0;         
+/* ======================== 状态变量 ======================== */
+static volatile esp_state_t s_state = ES_INIT;  /* 当前状态 */
+static volatile uint32_t    s_tick  = 0;         /* 主循环tick计数器(~5ms/tick) */
 static uint8_t              s_init_try = 0;      /* AT握手失败次数 */
 static uint8_t              s_cwjap_try = 0;     /* CWJAP连接WiFi失败次数 */
 #define MAX_CWJAP_RETRY  5u                       /* 最多重试5次后停止 */
 static volatile uint8_t     s_at_ok   = 0;      /* 收到"OK" */
-static volatile uint8_t     s_at_err  = 0;      
+static volatile uint8_t     s_at_err  = 0;      /* 收到"ERROR"或"FAIL" */
 static volatile uint8_t     s_busy    = 0;      /* 收到"busy p..." */
-static volatile uint8_t     s_at_prompt = 0;    
+static volatile uint8_t     s_at_prompt = 0;    /* 收到'>'提示符 */
 static volatile uint8_t     s_send_ok = 0;      /* 收到"SEND OK" */
 static volatile uint8_t     s_connected = 0;    /* 收到"CONNECT" */
 static uint8_t              s_cipstart_try = 0; /* CIPSTART重试次数 */
 static uint8_t              s_esp_sent  = 0;     /* 1=命令已发送，等待响应 */
-static uint32_t             s_sent_tick = 0;    
+static uint32_t             s_sent_tick = 0;    /* 命令发送时的tick值 */
 
+/* 响应等待延迟：发送命令后至少等30个tick(~50ms)再检查响应，
+   防止ISR在esp_send_cmd内部printf期间设置的残留标志被误判 */
 #define ESP_RESP_DELAY  30u
 
+/* CIPSTART前等待时间：首次10秒(CIPSTART_SETTLE)，重试也10秒(CIPSTART_RETRY)
+   ESP8266固件v2.2.0在CWJAP后DHCP/NTP任务可能阻塞10-30秒 */
 #define CIPSTART_SETTLE 2000u
 #define CIPSTART_RETRY  2000u
 
+/* ======================== 串口接收行缓冲 ======================== */
 static volatile char    s_line[ESP_LINE_LEN];
 static volatile uint8_t s_line_pos = 0;
 
+/* ======================== 调试行队列 ========================
+ * printf() 绝对不能在USART3中断服务程序里调用：
+ * 115200波特率下一个printf约耗时1.1ms，会拖慢RX移位寄存器，
+ * 导致模块快速的"OK"回复被静默丢弃(ORE溢出错误)，
+ * 进而使握手死锁在"收到回显但永远等不到OK"的状态。
+ * ISR只入队，由Tick()出队打印。*/
 #define DBG_QLEN 4
 
+/* ================= 非阻塞 HTTP GET (borrowed-link fetch) ================= */
 #define ESP_FETCH_RX_LEN     1024u
 #define ESP_FETCH_HOST_LEN     64u
 #define ESP_FETCH_PATH_LEN     96u
@@ -90,13 +115,18 @@ static volatile char    s_ipd[ESP_IPD_LEN];
 static volatile uint16_t s_ipd_len = 0;        /* 已捕获字节数 */
 static volatile uint16_t s_ipd_want = 0;       /* 期望载荷长度 */
 static volatile uint8_t  s_ipd_mode = 0;       /* 1=正在读取载荷字节 */
-static volatile uint8_t  s_ipd_ready = 0;      
+static volatile uint8_t  s_ipd_ready = 0;      /* 1=完整载荷已就绪 */
 
+/* ======================== 发送缓冲 ======================== */
 static char     s_sendbuf[ESP_SEND_LEN];
 static uint16_t s_sendlen = 0;
 static volatile uint8_t s_send_pending = 0;
 
+/* ============================================================
+ *  底层发送函数
+ * ============================================================ */
 
+/* 发送单个字符，阻塞等待发送完成标志 */
 static void esp_putc(char c)
 {
     while (USART_GetFlagStatus(ESP_USART, USART_FLAG_TC) == RESET)
@@ -110,6 +140,7 @@ static void esp_send(const char *s)
     while (*s) esp_putc(*s++);
 }
 
+/* 发送AT命令（先打印调试信息，再发命令+CRLF） */
 static void esp_send_cmd(const char *cmd)
 {
     printf("[ESP] TX: %s\r\n", cmd);
@@ -117,6 +148,9 @@ static void esp_send_cmd(const char *cmd)
     esp_send("\r\n");
 }
 
+/* ============================================================
+ *  USART3初始化 PB10(TX) / PB11(RX), 115200 8N1
+ * ============================================================ */
 void ESP8266_Init(void)
 {
     GPIO_InitTypeDef  GPIO_InitStructure;
@@ -127,6 +161,7 @@ void ESP8266_Init(void)
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
 
+    /* PB10/PB11 复用推挽50MHz，上拉 */
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_10 | GPIO_Pin_11;
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
@@ -138,6 +173,7 @@ void ESP8266_Init(void)
     GPIO_PinAFConfig(GPIOB, GPIO_PinSource10, GPIO_AF_USART3);
     GPIO_PinAFConfig(GPIOB, GPIO_PinSource11, GPIO_AF_USART3);
 
+    /* 串口参数: 115200, 8位数据, 1停止位, 无校验, 无流控, 收发模式 */
     USART_InitStructure.USART_BaudRate            = 115200;
     USART_InitStructure.USART_WordLength          = USART_WordLength_8b;
     USART_InitStructure.USART_StopBits            = USART_StopBits_1;
@@ -146,17 +182,23 @@ void ESP8266_Init(void)
     USART_InitStructure.USART_Mode                = USART_Mode_Rx | USART_Mode_Tx;
     USART_Init(ESP_USART, &USART_InitStructure);
 
+    /* 开启接收非空中断 */
     USART_ITConfig(ESP_USART, USART_IT_RXNE, ENABLE);
 
+    /* 配置USART3中断：抢占优先级6、子优先级0
+       FreeRTOS 接入后 NVIC 分组为 Group_4（4 位全抢占），此处数值即抢占优先级，
+       必须 >= configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY(5)，否则在中断里调用
+       FromISR 版本内核 API 会触发 configASSERT。三个串口中断统一使用 6。 */
     NVIC_InitStructure.NVIC_IRQChannel                   = USART3_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority        = 1;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 6;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority        = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd                = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
     /* 使能串口 */
     USART_Cmd(ESP_USART, ENABLE);
 
+    /* 复位状态机所有变量 */
     s_state        = ES_INIT;
     s_tick         = 0;
     s_init_try     = 0;
@@ -178,6 +220,15 @@ void ESP8266_Init(void)
     printf("[ESP] init USART3 PB10/PB11 115200\r\n");
 }
 
+/* ============================================================
+ *  AT响应行解析器（从中断服务程序调用）
+ *
+ *  注意：此函数在中断上下文中执行！
+ *  - 只设置标志位，不调用printf
+ *  - 不修改s_state（防止ISR干扰主循环状态机）
+ *  - 不修改s_esp_sent
+ *  CLOSED只清s_connected，不触发状态跳转
+ * ============================================================ */
 static void parse_line(void)
 {
     char buf[ESP_LINE_LEN];
@@ -204,7 +255,9 @@ static void parse_line(void)
     else if (strcmp(buf, "WIFI CONNECTED") == 0)  { /* 继续等GOT IP */ }
     else if (strcmp(buf, "WIFI GOT IP") == 0)     s_at_ok = 1;
     else if (strcmp(buf, "CLOSED") == 0)          { s_connected = 0; s_state = ES_CIPSTART; s_esp_sent = 0; s_tick = 0; }
+    /* CIPSEND的">"提示符可能带尾随空格 */
     else if (buf[0] == '>' && buf[1] == 0)        s_at_prompt = 1;
+    /* "+IPD,<len>:" 载荷头在中断字节循环中处理 */
 
     /* 入队调试打印 - ISR里绝不调用printf */
     if (next != s_dbg_tail)
@@ -214,6 +267,12 @@ static void parse_line(void)
     }
 }
 
+/* ============================================================
+ *  USART3 接收中断服务程序
+ *
+ *  逐字节接收，按行组装，遇到\n时调用parse_line()；
+ *  遇到"+IPD,<len>:"时切换到载荷捕获模式。
+ * ============================================================ */
 void USART3_IRQHandler(void)
 {
     if (USART_GetITStatus(ESP_USART, USART_IT_RXNE) != RESET)
@@ -239,6 +298,7 @@ void USART3_IRQHandler(void)
         else if (s_ipd_mode)
 
         {
+            /* ---- 载荷字节模式：逐字节捕获直到达到期望长度 ---- */
             if (s_ipd_len < s_ipd_want && s_ipd_len < (ESP_IPD_LEN - 1))
             {
                 s_ipd[s_ipd_len++] = ch;
@@ -253,6 +313,7 @@ void USART3_IRQHandler(void)
 
             else
             {
+                /* 溢出保护：停止捕获 */
                 s_ipd[s_ipd_len] = 0;
                 s_ipd_mode  = 0;
                 s_ipd_ready = 1;
@@ -268,11 +329,13 @@ void USART3_IRQHandler(void)
                 s_line[s_line_pos] = 0;
                 if (s_line_pos > 0)
                 {
+                    /* 检查是否为 "+IPD,<len>:" 行 */
                     if (s_line_pos >= 6 &&
                         s_line[0] == '+' && s_line[1] == 'I' &&
                         s_line[2] == 'P' && s_line[3] == 'D' &&
                         s_line[4] == ',')
                     {
+                        /* 查找冒号分隔符 */
                         uint8_t k;
                         uint16_t len = 0;
                         for (k = 5; k < s_line_pos; k++)
@@ -315,6 +378,7 @@ void USART3_IRQHandler(void)
             }
             else if (ch == '>' && s_line_pos == 0)
             {
+                /* CIPSEND的'>'提示符不带换行 */
                 s_at_prompt = 1;
             }
             else if (s_line_pos < ESP_LINE_LEN - 1)
@@ -346,6 +410,16 @@ void USART3_IRQHandler(void)
     }
 }
 
+/* ============================================================
+ *  状态机主循环（从main loop调用，每次约5ms）
+ *
+ *  统一模式：每个状态用 s_esp_sent 防双发：
+ *    - s_esp_sent=0 时：清标志→发命令→设s_esp_sent=1
+ *    - s_esp_sent=1 且超过ESP_RESP_DELAY后：检查响应
+ *    - 收到OK/ERROR或超时后：清s_esp_sent=0，切状态
+ *
+ *  ISR 不碰 s_esp_sent 与 s_state，所以不可能双发。
+ * ============================================================ */
 /* ============================================================
  *  Borrowed-link HTTP GET state machine
  *
@@ -532,6 +606,7 @@ static void esp_fetch_tick(void)
 void ESP8266_Tick(void)
 
 {
+    /* 先输出ISR入队的调试行（ISR里不能printf） */
     while (s_dbg_tail != s_dbg_head)
     {
         printf("[ESP] RX: %s\r\n", s_dbgq[s_dbg_tail]);
@@ -550,6 +625,7 @@ void ESP8266_Tick(void)
     switch (s_state)
 
     {
+    /* ---- 状态1: AT握手 ---- */
     case ES_INIT:
         if (!s_esp_sent)
         {
@@ -557,10 +633,12 @@ void ESP8266_Tick(void)
             esp_send_cmd("AT");
             s_esp_sent = 1; s_sent_tick = s_tick;
         }
+        /* 发送后等待ESP_RESP_DELAY个tick再检查响应 */
         if (s_esp_sent && (s_tick - s_sent_tick) > ESP_RESP_DELAY)
         {
             if (s_at_ok)
             {
+                /* 收到OK，进入下一状态 */
                 s_at_ok = 0; s_tick = 0; s_init_try = 0; s_esp_sent = 0;
                 s_state = ES_ATE0;
             }
@@ -581,6 +659,7 @@ void ESP8266_Tick(void)
         }
         break;
 
+    /* ---- 状态2: 关闭回显 ---- */
     case ES_ATE0:
         if (!s_esp_sent)
         {
@@ -595,6 +674,7 @@ void ESP8266_Tick(void)
         }
         break;
 
+    /* ---- 状态3: 设置Station模式 ---- */
     case ES_CWMODE:
         if (!s_esp_sent)
         {
@@ -648,6 +728,7 @@ void ESP8266_Tick(void)
         }
         break;
 
+    /* ---- 状态5: 单连接模式 ---- */
     case ES_CIPMUX:
         if (!s_esp_sent)
         {
@@ -659,6 +740,7 @@ void ESP8266_Tick(void)
         {
             if (s_at_ok || s_at_err)
             {
+                /* OK或ERROR都继续（部分固件不支持CIPMUX） */
                 s_at_ok = 0; s_at_err = 0; s_tick = 0; s_esp_sent = 0;
                 s_state = ES_CIPSENDBUF;
             }
@@ -666,6 +748,9 @@ void ESP8266_Tick(void)
         }
         break;
 
+    /* ---- 状态6: 禁用发送缓冲 ---- */
+    /* ESP8266固件v2.2.0的发送缓冲有内存泄漏bug，
+       禁用可释放内存，避免后续CIPSTART收到"busy p..." */
     case ES_CIPSENDBUF:
         if (!s_esp_sent)
         {
@@ -677,6 +762,7 @@ void ESP8266_Tick(void)
         {
             if (s_at_ok || s_at_err)
             {
+                /* OK=支持，ERROR=不支持，都忽略继续 */
                 s_at_ok = 0; s_at_err = 0; s_tick = 0; s_esp_sent = 0;
                 s_state = ES_CIPSTART;
             }
@@ -684,9 +770,15 @@ void ESP8266_Tick(void)
         }
         break;
 
+    /* ---- 状态7: 建立TCP连接 ---- */
+    /* 首次进入时s_tick已被前一状态清零，需要等待CIPSTART_SETTLE(10秒)
+       让模块内部DHCP/NTP任务完成，否则会收到"busy p..."。
+       重试时等待CIPSTART_RETRY(10秒)。
+       使用与所有其他状态完全相同的 s_esp_sent 防双发模式。 */
     case ES_CIPSTART:
         if (!s_esp_sent)
         {
+            /* 等待settle时间到达后再发命令 */
             uint32_t settle = (s_cipstart_try == 0) ? CIPSTART_SETTLE : CIPSTART_RETRY;
             if (s_tick >= settle)
             {
@@ -732,12 +824,14 @@ void ESP8266_Tick(void)
             }
             else if (s_tick - s_sent_tick > 5000)
             {
+                /* 7.5秒无响应，超时重试 */
                 printf("[ESP] CIPSTART timeout, retry\r\n");
                 s_tick = 0; s_esp_sent = 0;
             }
         }
         break;
 
+    /* ---- 状态8: 链路就绪，等待发送请求 ---- */
     case ES_READY:
         if (!s_connected) { s_state = ES_CIPSTART; break; }
         if (s_send_pending && s_sendlen > 0)
@@ -750,6 +844,7 @@ void ESP8266_Tick(void)
         }
         break;
 
+    /* ---- 状态9: 等待'>'提示符 ---- */
     case ES_SEND_PROMPT:
         if (s_at_prompt)
         {
@@ -759,10 +854,10 @@ void ESP8266_Tick(void)
             s_state = ES_SEND_DATA;
             s_tick  = 0;
         }
-        else if (s_tick > 200) { s_state = ES_READY; }   
+        else if (s_tick > 200) { s_state = ES_READY; }   /* 1秒超时放弃 */
         break;
 
-    /* ---- 状态?0: 等待SEND OK ---- */
+    /* ---- 状态10: 等待SEND OK ---- */
     /* 发送完成后直接回到 ES_READY，不再进入 ES_WAIT_IPD 等待回复。
        原先的 5 秒等待是为 AI 对话回复设计的，对话已改为本地回复，
        且云控指令（OPEN/SET）是云端主动下发的非请求式 IPD，
@@ -770,7 +865,7 @@ void ESP8266_Tick(void)
        避免 outbound 上报被阻塞 5 秒。 */
     case ES_SEND_DATA:
         if (s_send_ok) { s_send_ok = 0; s_state = ES_READY; s_tick = 0; }
-        else if (s_tick > 400) { s_state = ES_READY; }   /* 2秒超?*/
+        else if (s_tick > 400) { s_state = ES_READY; }   /* 2秒超时 */
         break;
 
     /* ---- 状态：待服务器回复的IPD ---- */
@@ -822,6 +917,7 @@ uint8_t ESP8266_IsReady(void)
             s_state == ES_SEND_DATA || s_state == ES_WAIT_IPD) ? 1 : 0;
 }
 
+/* 获取当前状态码（供UI显示） */
 uint8_t ESP8266_GetStatus(void)
 {
     return (uint8_t)s_state;
@@ -833,6 +929,7 @@ uint8_t ESP8266_SendIsPending(void)
     return (uint8_t)s_send_pending;
 }
 
+/* 排队发送一行文本（非阻塞，返回0=失败/不可用） */
 uint8_t ESP8266_SendText(const char *text)
 {
     uint16_t len = (uint16_t)strlen(text);
@@ -852,6 +949,7 @@ uint8_t ESP8266_SendText(const char *text)
     return 1;
 }
 
+/* 取下一行服务器回复（无数据返回0） */
 uint8_t ESP8266_GetResponse(char *out, uint8_t maxlen)
 {
     uint8_t i;
@@ -864,6 +962,9 @@ uint8_t ESP8266_GetResponse(char *out, uint8_t maxlen)
     return 1;
 }
 
+/* ============================================================
+ *  非阻塞 HTTP GET 对外接口
+ * ============================================================ */
 uint8_t ESP8266_FetchBusy(void)
 {
     return s_fetch_active;

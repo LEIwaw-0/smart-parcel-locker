@@ -6,8 +6,6 @@
 ******************************************************/
 #include "app_ctx.h"
 
-uint32_t loop_tick = 0;
-
 uint8_t  s_state   = ST_MENU;
 uint8_t  s_overlay = 0;      /* 1 = chat / pickup-guide overlay shown */
 
@@ -28,7 +26,6 @@ uint8_t  s_pick_pressed = 0;
 char     s_vpart[7] = {0};
 uint8_t  s_vplen    = 0;
 uint8_t  s_voice_pending = 0;
-uint8_t  s_voice_seen    = 0;
 
 /* Pickup keypad confirm latch */
 uint8_t  s_kpad_confirm = 0;
@@ -37,13 +34,6 @@ uint8_t  s_kpad_confirm = 0;
 uint8_t  s_chat_mode = 0;
 uint8_t  s_chat_busy = 0;
 uint32_t s_chat_tick = 0;
-
-/* Per-box door tracker (PCF8574 P4-P7 feedback) */
-uint8_t  s_door_phase[BOX_COUNT];
-uint8_t  s_door_flow[BOX_COUNT];
-uint8_t  s_door_src[BOX_COUNT];
-uint8_t  s_door_db[BOX_COUNT];
-uint32_t s_door_open_tick[BOX_COUNT];
 
 /* Chinese digits for the conversational TTS readback (GBK literals) */
 const char *const cn_digit[10] = {
