@@ -976,6 +976,12 @@ uint8_t ESP8266_FetchStart(const char *host, const char *path)
     if (!host || !path) return 2;
     if (strlen(host) >= ESP_FETCH_HOST_LEN) return 2;
     if (strlen(path) >= ESP_FETCH_PATH_LEN) return 2;
+    /* 一行上行文本正排队或正处在CIPSEND握手中间时拒绝借链路：
+       此刻模块可能还在等AT+CIPSEND声明的载荷字节，FS_UNLINK要发的
+       AT+CIPCLOSE会被当作TCP载荷吐出去(服务器日志里出现过
+       未识别指令 'AT+CIPCLOSE')，模块也会就此进入混乱态，
+       导致后续AT+CIPSTART连续返回ERROR。等本次发送结束再抓天气。 */
+    if (ESP8266_SendIsPending()) return 1;
     if (!ESP8266_IsReady()) return 2;
 
     strcpy(s_fetch_host, host);
