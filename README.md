@@ -169,7 +169,7 @@ D:\keil\UV4\UV4.exe -b firmware\locker.uvprojx -j0 -o build.log
 当前编译结果（接入 FreeRTOS 之后）：
 
 ```
-Program Size: Code=49988  RO-data=11712  RW-data=648  ZI-data=41624
+Program Size: Code=50008  RO-data=11712  RW-data=648  ZI-data=41624
 ".\Objects\locker.axf" - 0 Error(s), 0 Warning(s)
 ```
 
@@ -361,6 +361,26 @@ static uint32_t s_open_ms[BOX_COUNT]; /* 开门时刻，用于 30s 超时兜底 
   `decode('gbk')` / `encode('gbk')`，不做隐式转换。
 - **代码**：`firmware/` 下全部源码
 
+### 16. 抓天气时 AT 命令被当成 TCP 载荷发给了服务器
+
+- **现象**：每 ~180s 抓一次天气，柜机与服务器的长连接就断一次，而且几十秒回不来，
+  Web 后台这段时间只能显示"柜机离线"；服务器日志里还夹着一条
+  `未识别指令: 'AT+CIPCLOSE'` 和 `[WinError 10054] 远程主机强迫关闭了一个现有的连接`。
+- **根因**：`AT+CIPMUX=0` 只有一个 socket，抓天气的第一步必须用 `AT+CIPCLOSE`
+  把中继链路腾出来，这是设计如此。但 `ESP8266_FetchStart()` 当时只检查了
+  `ESP8266_IsReady()`——而该函数在 `ES_SEND_PROMPT` / `ES_SEND_DATA`
+  （模块正等 `AT+CIPSEND` 声明的载荷字节）时**同样返回 1**。于是上行 `STATUS`
+  发到一半时借走链路，`AT+CIPCLOSE` 这串字符被模块当成 TCP 载荷吐给了服务器，
+  模块随即进入混乱态：之后 `AT+CIPSTART` 连续返回 `ERROR`（重试 3/4/5 次），
+  直到 `[ESP] retry handshake` 重跑整轮握手才恢复。
+- **解决**：把仓库里已声明、已实现、却**始终没有任何调用点**的
+  `ESP8266_SendIsPending()` 接进 `FetchStart()`：发送未结束时返回"忙"，
+  link 任务按既有路径把这个拒绝回报给时钟任务，weather 延后
+  `WX_RETRY_MS`（12s）重试。判断**刻意放在 `IsReady()` 之前**——
+  `IsReady()` 认得的几种发送态里，只有"正等载荷"这一种会吃掉命令，必须优先拦住。
+- **代码**：[esp8266.c](file:///d:/STM32/demo/locker/portfolio/firmware/driver/esp8266.c#L978-L983)、
+  [app_link.c](file:///d:/STM32/demo/locker/portfolio/firmware/app/app_link.c#L99-L105)
+
 ---
 
 ## 七、架构升级：接入 FreeRTOS 的事件驱动改造
@@ -495,7 +515,7 @@ UI 任务的"截止时间"（2s 上报状态、25s 聊天租期、3s 标题栏�
 
 | | 接入前 | 接入后 | 增量 |
 |---|---:|---:|---:|
-| Code | 37668 | 49988 | +12.3 KB |
+| Code | 37668 | 50008 | +12.3 KB |
 | RO-data | 11468 | 11712 | +0.2 KB |
 | RW-data | 484 | 648 | +0.2 KB |
 | ZI-data | 7540 | 41624 | +34.1 KB |
